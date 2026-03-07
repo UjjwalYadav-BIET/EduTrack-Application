@@ -21,7 +21,7 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
-            entity = Faculty::class,
+            entity = FacultyEntity::class,
             parentColumns = ["facultyId"],
             childColumns = ["facultyId"],
             onDelete = ForeignKey.CASCADE
@@ -30,7 +30,11 @@ import androidx.room.PrimaryKey
     indices = [
         Index("studentId"),
         Index("subjectId"),
-        Index("facultyId")
+        Index("facultyId"),
+        Index(
+            value = ["studentId", "subjectId", "facultyId", "date", "lecturePeriod"],
+            unique = true
+        )
     ]
 )
 data class AttendanceEntity(
@@ -41,5 +45,6 @@ data class AttendanceEntity(
     val facultyId: Int,
     val date: Long,
     val lecturePeriod: Int,
-    val isPresent: Boolean
+    val isPresent: Boolean,
+    val createdAt: Long = System.currentTimeMillis()
 )

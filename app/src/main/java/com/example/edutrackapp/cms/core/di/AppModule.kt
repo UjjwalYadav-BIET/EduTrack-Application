@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.room.Room
 import com.example.edutrackapp.cms.core.data.local.EduTrackDatabase
 import com.example.edutrackapp.data.local.AttendanceDao
+import com.example.edutrackapp.data.local.TimeTableDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -38,5 +39,11 @@ object AppModule {
         return db.attendanceDao()
     }
 
-
+    @Provides
+    @Singleton
+    fun provideTimeTableDao(
+        db: EduTrackDatabase
+    ): TimeTableDao {
+        return db.timeTableDao()
+    }
 }

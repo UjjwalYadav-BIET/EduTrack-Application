@@ -5,11 +5,13 @@ import androidx.room.RoomDatabase
 import com.example.edutrackapp.cms.core.data.local.dao.*
 import com.example.edutrackapp.cms.core.data.local.entity.*
 import com.example.edutrackapp.data.Attendence.AttendanceEntity
-import com.example.edutrackapp.data.Attendence.Faculty
+import com.example.edutrackapp.data.Attendence.FacultyEntity
 import com.example.edutrackapp.data.Attendence.FacultySubjectEntity
 import com.example.edutrackapp.data.Attendence.StudentEntity
 import com.example.edutrackapp.data.Attendence.SubjectEntity
 import com.example.edutrackapp.data.local.AttendanceDao
+import com.example.edutrackapp.data.local.TimeTableDao
+import com.example.edutrackapp.data.timeTable.TimeTableEntity
 
 @Database(
     entities = [
@@ -20,11 +22,12 @@ import com.example.edutrackapp.data.local.AttendanceDao
         SubmissionEntity::class,
         StudentEntity::class,
         SubjectEntity::class,
-        Faculty::class,
+        FacultyEntity::class,
         AttendanceEntity::class,
         FacultySubjectEntity::class,
+        TimeTableEntity::class
     ],
-    version = 8,
+    version = 7,
     exportSchema = false
 )
 abstract class EduTrackDatabase : RoomDatabase() {
@@ -34,4 +37,6 @@ abstract class EduTrackDatabase : RoomDatabase() {
     abstract val assignmentDao: AssignmentDao
     abstract val submissionDao: SubmissionDao
     abstract fun attendanceDao(): AttendanceDao
+    abstract fun timeTableDao(): TimeTableDao
+
 }

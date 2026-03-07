@@ -179,6 +179,7 @@ fun MarkAttendanceScreen(
     val selectedLecture = viewModel.selectedLecture
     val selectedDate = viewModel.selectedDate
 
+    var section by remember { mutableStateOf("A") }
     val error = viewModel.errorMessage
 
     LaunchedEffect(error) {
@@ -259,6 +260,7 @@ fun MarkAttendanceScreen(
                 selected = selectedLecture,
                 onSelected = { viewModel.selectedLecture= it }
             )
+
 
             Text(
                 text = "Date: $selectedDate",

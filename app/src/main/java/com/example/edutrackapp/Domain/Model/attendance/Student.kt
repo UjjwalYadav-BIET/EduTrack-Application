@@ -1,4 +1,4 @@
-package com.example.edutrackapp.Domain.Model
+package com.example.edutrackapp.Domain.Model.attendance
 
 data class Student(
     val id: Int,

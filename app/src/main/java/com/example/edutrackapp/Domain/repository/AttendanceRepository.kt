@@ -1,8 +1,8 @@
 package com.example.edutrackapp.Domain.repository
 
-import com.example.edutrackapp.Domain.Model.Attendance
-import com.example.edutrackapp.Domain.Model.Student
-import com.example.edutrackapp.Domain.Model.Subject
+import com.example.edutrackapp.Domain.Model.attendance.Attendance
+import com.example.edutrackapp.Domain.Model.attendance.Student
+import com.example.edutrackapp.Domain.Model.attendance.Subject
 
 
 
@@ -12,4 +12,15 @@ interface AttendanceRepository {
     suspend fun insertAttendance(attendance: List<Attendance>)
     suspend fun getAttendanceForStudent(studentId: Int, subjectId: Int): List<Attendance>
     suspend fun getAttendancePercentage(studentId: Int, subjectId: Int): Double
+
+    suspend fun isAttendanceAlreadyTaken(
+        facultyId: Int,
+        subjectId: Int,
+        date: Long,
+        lecturePeriod: Int
+    ): Boolean
+
+    suspend fun canTakeAttendance(
+        facultyId: Int
+    ): Boolean
 }

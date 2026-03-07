@@ -12,15 +12,21 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
+import com.example.edutrackapp.Domain.Model.timeTable.TimeTableWithDetails
+import kotlin.math.absoluteValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,10 +34,13 @@ fun TimeTableScreen(
     navController: NavController,
     viewModel: TimeTableViewModel = hiltViewModel()
 ) {
-    val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
-    val selectedDay = viewModel.selectedDay.value
-    val classes = viewModel.currentClasses.value
 
+    LaunchedEffect(Unit) {
+        viewModel.loadTimeTable()
+    }
+    val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+    val selectedDay = viewModel.selectedDay
+    val classes = viewModel.currentClasses
     Scaffold(
         topBar = {
             TopAppBar(
@@ -104,7 +113,7 @@ fun DayChip(day: String, isSelected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun TimeTableCard(slot: TimeTableSlot) {
+fun TimeTableCard(slot: TimeTableWithDetails) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -118,12 +127,12 @@ fun TimeTableCard(slot: TimeTableSlot) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = slot.time.substringBefore(" -"), // Start time
+                text = slot.startTime.substringBefore(" -"),
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp
             )
             Text(
-                text = slot.time.substringAfter("- "), // End time
+                text = slot.endTime.substringAfter("- "),
                 color = Color.Gray,
                 fontSize = 12.sp
             )
@@ -144,30 +153,37 @@ fun TimeTableCard(slot: TimeTableSlot) {
                     .background(Color.White)
             ) {
                 // Colored Stripe
-                Box(
-                    modifier = Modifier
-                        .width(8.dp)
-                        .fillMaxHeight()
-                        .background(Color(slot.colorHex))
-                )
+//                Box(
+//                    modifier = Modifier
+//                        .width(8.dp)
+//                        .fillMaxHeight()
+//                        .background(Color(slot.colorHex))
+//                )
 
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = slot.subject, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(text = slot.subjectName, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     Spacer(modifier = Modifier.height(4.dp))
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.Gray)
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = slot.room, fontSize = 14.sp, color = Color.Gray)
+                        Text(text = slot.branch, fontSize = 14.sp, color = Color.Gray)
 
                         Spacer(modifier = Modifier.width(16.dp))
 
                         Box(modifier = Modifier.clip(RoundedCornerShape(4.dp)).background(Color.LightGray.copy(alpha=0.3f)).padding(horizontal = 6.dp, vertical = 2.dp)) {
-                            Text(text = slot.batch, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text(text = slot.section, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
             }
         }
     }
+}
+
+@Preview
+@Composable
+fun preTimeTable(){
+    val navController= rememberNavController()
+    TimeTableScreen(navController)
 }
