@@ -1,4 +1,4 @@
-package com.example.edutrackapp.data.timeTable
+package com.example.edutrackapp.data.local.timeTable
 
 import androidx.room.Entity
 import androidx.room.Index

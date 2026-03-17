@@ -3,6 +3,8 @@ package com.example.edutrackapp.cms.core.di
 import android.app.Application
 import androidx.room.Room
 import com.example.edutrackapp.cms.core.data.local.EduTrackDatabase
+import com.example.edutrackapp.cms.core.data.local.dao.AssignmentDao
+import com.example.edutrackapp.cms.core.data.local.dao.AssignmentSubmissionDao
 import com.example.edutrackapp.data.local.AttendanceDao
 import com.example.edutrackapp.data.local.TimeTableDao
 import dagger.Module
@@ -45,5 +47,17 @@ object AppModule {
         db: EduTrackDatabase
     ): TimeTableDao {
         return db.timeTableDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideAssignmentDao(db: EduTrackDatabase): AssignmentDao {
+        return db.assignmentDao
+    }
+
+    @Provides
+    @Singleton
+    fun provideAssignmentSubmissionDao(db: EduTrackDatabase): AssignmentSubmissionDao {
+        return db.assignmentSubmissionDao
     }
 }

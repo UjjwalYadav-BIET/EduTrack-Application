@@ -4,23 +4,24 @@ import android.net.Uri
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.edutrackapp.cms.core.data.local.EduTrackDatabase
+import com.example.edutrackapp.Domain.repository.AssignmentRepository
 import com.example.edutrackapp.cms.core.data.local.entity.AssignmentEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
 class AssignmentViewModel @Inject constructor(
-    private val database: EduTrackDatabase
+    private val repository: AssignmentRepository
 ) : ViewModel() {
 
     var title = mutableStateOf("")
     var subject = mutableStateOf("")
     var description = mutableStateOf("")
     var dueDate = mutableStateOf("")
-
-    // Defaulting to "CS-A" since we haven't built a Batch Selector yet
     var batch = mutableStateOf("CS-A")
 
     var selectedFileUri = mutableStateOf<Uri?>(null)
@@ -32,19 +33,45 @@ class AssignmentViewModel @Inject constructor(
     fun onFileSelected(uri: Uri?) { selectedFileUri.value = uri }
 
     fun createAssignment(onSuccess: () -> Unit) {
-        if (title.value.isNotEmpty() && subject.value.isNotEmpty() && description.value.isNotEmpty()) {
+
+        if (
+            title.value.isNotEmpty() &&
+            subject.value.isNotEmpty() &&
+            description.value.isNotEmpty()
+        ) {
+
             viewModelScope.launch {
+
+                val currentDate = SimpleDateFormat(
+                    "dd/MM/yyyy",
+                    Locale.getDefault()
+                ).format(Date())
+
                 val assignment = AssignmentEntity(
                     title = title.value,
                     subject = subject.value,
                     description = description.value,
                     dueDate = dueDate.value,
-                    batch = batch.value, // <--- FIXED: Added the missing batch parameter
+                    batch = batch.value,
+                    teacherId = "T-101", // Example teacher id
+                    createdDate = currentDate,
                     attachmentUri = selectedFileUri.value?.toString()
                 )
-                database.assignmentDao.insertAssignment(assignment)
+
+                repository.insertAssignment(assignment)
+
+                clearFields()
+
                 onSuccess()
             }
         }
+    }
+
+    private fun clearFields() {
+        title.value = ""
+        subject.value = ""
+        description.value = ""
+        dueDate.value = ""
+        selectedFileUri.value = null
     }
 }

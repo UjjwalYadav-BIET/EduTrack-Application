@@ -4,9 +4,9 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.example.edutrackapp.data.Attendence.AttendanceEntity
-import com.example.edutrackapp.data.Attendence.StudentEntity
-import com.example.edutrackapp.data.Attendence.SubjectEntity
+import com.example.edutrackapp.data.local.Attendence.AttendanceEntity
+import com.example.edutrackapp.data.local.Attendence.StudentEntity
+import com.example.edutrackapp.data.local.Attendence.SubjectEntity
 
 @Dao
 interface AttendanceDao {

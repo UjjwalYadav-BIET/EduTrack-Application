@@ -1,4 +1,4 @@
-package com.example.edutrackapp.data.Attendence
+package com.example.edutrackapp.data.local.Attendence
 
 import androidx.room.Entity
 

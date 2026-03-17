@@ -4,14 +4,14 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.example.edutrackapp.cms.core.data.local.dao.*
 import com.example.edutrackapp.cms.core.data.local.entity.*
-import com.example.edutrackapp.data.Attendence.AttendanceEntity
-import com.example.edutrackapp.data.Attendence.FacultyEntity
-import com.example.edutrackapp.data.Attendence.FacultySubjectEntity
-import com.example.edutrackapp.data.Attendence.StudentEntity
-import com.example.edutrackapp.data.Attendence.SubjectEntity
+import com.example.edutrackapp.data.local.Attendence.AttendanceEntity
+import com.example.edutrackapp.data.local.Attendence.FacultyEntity
+import com.example.edutrackapp.data.local.Attendence.FacultySubjectEntity
+import com.example.edutrackapp.data.local.Attendence.StudentEntity
+import com.example.edutrackapp.data.local.Attendence.SubjectEntity
 import com.example.edutrackapp.data.local.AttendanceDao
 import com.example.edutrackapp.data.local.TimeTableDao
-import com.example.edutrackapp.data.timeTable.TimeTableEntity
+import com.example.edutrackapp.data.local.timeTable.TimeTableEntity
 
 @Database(
     entities = [
@@ -25,9 +25,10 @@ import com.example.edutrackapp.data.timeTable.TimeTableEntity
         FacultyEntity::class,
         AttendanceEntity::class,
         FacultySubjectEntity::class,
-        TimeTableEntity::class
+        TimeTableEntity::class,
+        AssignmentSubmissionEntity::class
     ],
-    version = 7,
+    version = 6,
     exportSchema = false
 )
 abstract class EduTrackDatabase : RoomDatabase() {
@@ -36,7 +37,7 @@ abstract class EduTrackDatabase : RoomDatabase() {
     abstract val resultDao: ResultDao
     abstract val assignmentDao: AssignmentDao
     abstract val submissionDao: SubmissionDao
+    abstract val assignmentSubmissionDao: AssignmentSubmissionDao
     abstract fun attendanceDao(): AttendanceDao
     abstract fun timeTableDao(): TimeTableDao
-
 }

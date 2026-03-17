@@ -4,7 +4,7 @@ import com.example.edutrackapp.Domain.Model.attendance.Attendance
 import com.example.edutrackapp.Domain.Model.attendance.Student
 import com.example.edutrackapp.Domain.Model.attendance.Subject
 import com.example.edutrackapp.Domain.repository.AttendanceRepository
-import com.example.edutrackapp.data.Attendence.AttendanceEntity
+import com.example.edutrackapp.data.local.Attendence.AttendanceEntity
 import com.example.edutrackapp.data.local.AttendanceDao
 import javax.inject.Inject
 
