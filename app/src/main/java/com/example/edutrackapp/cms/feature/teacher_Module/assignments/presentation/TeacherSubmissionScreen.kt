@@ -26,7 +26,9 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.example.edutrackapp.Domain.repository.AssignmentSubmissionRepository
 import com.example.edutrackapp.cms.core.data.local.EduTrackDatabase
+import com.example.edutrackapp.cms.core.data.local.entity.AssignmentSubmissionEntity
 import com.example.edutrackapp.cms.core.data.local.entity.SubmissionEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,14 +38,13 @@ import javax.inject.Inject
 // 1. ViewModel to fetch submissions
 @HiltViewModel
 class TeacherSubmissionViewModel @Inject constructor(
-    private val database: EduTrackDatabase,
+    private val repository: AssignmentSubmissionRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    // We get the assignmentId from the Navigation arguments
     private val assignmentId: Int = checkNotNull(savedStateHandle["assignmentId"])
 
-    val submissions = database.submissionDao.getSubmissionsForAssignment(assignmentId)
+    val submissions = repository.getSubmissionsForAssignment(assignmentId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }
 
@@ -125,7 +126,7 @@ fun TeacherSubmissionScreen(
 }
 
 @Composable
-fun SubmissionCard(submission: SubmissionEntity, onOpenClick: () -> Unit) {
+fun SubmissionCard(submission: AssignmentSubmissionEntity, onOpenClick: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(2.dp),

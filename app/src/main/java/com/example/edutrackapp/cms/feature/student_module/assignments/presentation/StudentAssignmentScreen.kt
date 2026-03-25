@@ -121,16 +121,18 @@ fun StudentAssignmentScreen(
                                     val uri = Uri.parse(selectedAssignment!!.attachmentUri)
 
                                     val intent = Intent(Intent.ACTION_VIEW).apply {
-                                        setDataAndType(uri, "application/pdf")
-                                        flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                        setDataAndType(uri, "*/*") // 🔥 allow all apps (PDF, Word, etc.)
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                     }
 
-                                    context.startActivity(Intent.createChooser(intent, "Open PDF"))
+                                    val chooser = Intent.createChooser(intent, "Open with")
+
+                                    context.startActivity(chooser)
 
                                 } catch (e: Exception) {
                                     Toast.makeText(
                                         context,
-                                        "Cannot open file. Please install a PDF viewer.",
+                                        "No app found to open this file",
                                         Toast.LENGTH_SHORT
                                     ).show()
                                 }
