@@ -20,6 +20,7 @@ import com.example.edutrackapp.cms.feature.student_module.results.presentation.S
 import com.example.edutrackapp.cms.feature.student_module.timetable.presentation.StudentTimeTableScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.assignments.presentation.CreateAssignmentScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.assignments.presentation.TeacherAssignmentListScreen
+import com.example.edutrackapp.cms.feature.teacher_Module.assignments.presentation.TeacherEvaluateSubmissionScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.assignments.presentation.TeacherSubmissionScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.attendance.presentation.FaceScanScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.attendance.presentation.MarkAttendanceScreen
@@ -152,6 +153,12 @@ fun EduTrackNavGraph(navController: NavHostController) {
             arguments = listOf(navArgument("assignmentId") { type = NavType.IntType })
         ) {
             TeacherSubmissionScreen(navController = navController)
+        }
+        composable(
+            route = "evaluate_submission/{submissionId}",
+            arguments = listOf(navArgument("submissionId") { type = NavType.IntType })
+        ) {
+            TeacherEvaluateSubmissionScreen(navController = navController)
         }
     }
 }

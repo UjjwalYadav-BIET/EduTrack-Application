@@ -21,6 +21,21 @@ class AssignmentViewModel @Inject constructor(
     var title = mutableStateOf("")
     var subject = mutableStateOf("")
     var description = mutableStateOf("")
+    var semester = mutableStateOf("")
+    var section = mutableStateOf("")
+    var branch = mutableStateOf("")
+
+    fun onSemesterChange(value: String) {
+        semester.value = value
+    }
+
+    fun onSectionChange(value: String) {
+        section.value = value
+    }
+
+    fun onBranchChange(value: String) {
+        branch.value = value
+    }
     var dueDate = mutableStateOf("")
     var batch = mutableStateOf("CS-A")
 
@@ -32,36 +47,37 @@ class AssignmentViewModel @Inject constructor(
     fun onDateChange(newText: String) { dueDate.value = newText }
     fun onFileSelected(uri: Uri?) { selectedFileUri.value = uri }
 
-    fun createAssignment(onSuccess: () -> Unit) {
+    fun createAssignment(
+        semester: Int,
+        dueDate: Long,
+        subjectId: Int,
+        onSuccess: () -> Unit
+    ) {
 
         if (
             title.value.isNotEmpty() &&
-            subject.value.isNotEmpty() &&
-            description.value.isNotEmpty()
+            description.value.isNotEmpty() &&
+            semester != 0 &&
+            section.value.isNotEmpty() &&
+            branch.value.isNotEmpty()
         ) {
 
             viewModelScope.launch {
 
-                val currentDate = SimpleDateFormat(
-                    "dd/MM/yyyy",
-                    Locale.getDefault()
-                ).format(Date())
-
                 val assignment = AssignmentEntity(
                     title = title.value,
-                    subject = subject.value,
                     description = description.value,
-                    dueDate = dueDate.value,
-                    batch = batch.value,
-                    teacherId = "T-101", // Example teacher id
-                    createdDate = currentDate,
+                    subjectId = subjectId,
+                    semester = semester,
+                    section = section.value,
+                    branch = branch.value,
+                    teacherId = 1,
+                    createdDate = System.currentTimeMillis(),
+                    dueDate = dueDate,
                     attachmentUri = selectedFileUri.value?.toString()
                 )
-
                 repository.insertAssignment(assignment)
-
                 clearFields()
-
                 onSuccess()
             }
         }

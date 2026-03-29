@@ -78,7 +78,7 @@ class AttendanceViewModel @Inject constructor(
     private val _subjects = MutableStateFlow<List<SubjectUiModel>>(emptyList())
     val subjects = _subjects.asStateFlow()
 
-    var selectedSubjectId by mutableStateOf(0)
+    var selectedSubjectId by mutableStateOf(1)
     var selectedLecture by mutableStateOf(1)
     var selectedDate by mutableStateOf(LocalDate.now())
 

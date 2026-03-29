@@ -67,11 +67,12 @@ fun StudentAssignmentScreen(
 
     // --- STATES FOR VIEWING DETAILS ---
     var showDialog by remember { mutableStateOf(false) }
-    var selectedAssignment by remember { mutableStateOf<AssignmentEntity?>(null) }
+    var selectedAssignment by remember { mutableStateOf<AssignmentUiState?>(null) }
     // ----------------------------------
 
     // State for Submission logic
     var assignmentIdToSubmit by remember { mutableStateOf<Int?>(null) }
+
 
     // File Picker Launcher
     val fileLauncher = rememberLauncherForActivityResult(
@@ -89,7 +90,7 @@ fun StudentAssignmentScreen(
             onDismissRequest = { showDialog = false },
             title = {
                 Text(
-                    text = selectedAssignment!!.title,
+                    text = selectedAssignment!!.assignment.title,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF009688)
                 )
@@ -97,7 +98,7 @@ fun StudentAssignmentScreen(
             text = {
                 Column {
                     Text(
-                        text = "Subject: ${selectedAssignment!!.subject}",
+                        text = "Subject: ${selectedAssignment!!.subjectName}",
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp,
                         color = Color.Gray
@@ -106,19 +107,19 @@ fun StudentAssignmentScreen(
                     Divider()
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = selectedAssignment!!.description,
+                        text = selectedAssignment!!.assignment.description,
                         fontSize = 16.sp,
                         lineHeight = 24.sp
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // --- OPEN ATTACHMENT BUTTON ---
-                    if (!selectedAssignment!!.attachmentUri.isNullOrEmpty()) {
+                    if (!selectedAssignment!!.assignment.attachmentUri.isNullOrEmpty()) {
                         Button(
                             onClick = {
 
                                 try {
-                                    val uri = Uri.parse(selectedAssignment!!.attachmentUri)
+                                    val uri = Uri.parse(selectedAssignment!!.assignment.attachmentUri)
 
                                     val intent = Intent(Intent.ACTION_VIEW).apply {
                                         setDataAndType(uri, "*/*") // 🔥 allow all apps (PDF, Word, etc.)
@@ -151,7 +152,7 @@ fun StudentAssignmentScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.CalendarToday, null, tint = Color.Red, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = "Due Date: ${selectedAssignment!!.dueDate}", color = Color.Red, fontWeight = FontWeight.Bold)
+                        Text(text = "Due Date: ${selectedAssignment!!.assignment.dueDate}", color = Color.Red, fontWeight = FontWeight.Bold)
                     }
                 }
             },
@@ -199,7 +200,7 @@ fun StudentAssignmentScreen(
                     StudentAssignmentCard(
                         item = uiItem,
                         onCardClick = {
-                            selectedAssignment = uiItem.assignment
+                            selectedAssignment = uiItem
                             showDialog = true
                         },
                         onSubmitClick = {

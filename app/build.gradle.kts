@@ -50,6 +50,8 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
+
+
     // 2. Navigation
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
@@ -62,6 +64,8 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
+
+    implementation("com.github.mhiew:android-pdf-viewer:3.2.0-beta.3")
 
     // 5. Network (Retrofit + Converter)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")

@@ -5,5 +5,6 @@ import com.example.edutrackapp.cms.core.data.local.entity.AssignmentEntity
 // Helper Data Class
 data class AssignmentUiState(
     val assignment: AssignmentEntity,
+    val subjectName: String,
     val isSubmitted: Boolean
 )

@@ -22,20 +22,46 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import com.example.edutrackapp.Domain.repository.AssignmentRepository
 import com.example.edutrackapp.cms.core.data.local.EduTrackDatabase
 import com.example.edutrackapp.cms.core.data.local.entity.AssignmentEntity
 import com.example.edutrackapp.cms.ui.navigation.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
 
 @HiltViewModel
 class TeacherAssignmentListViewModel @Inject constructor(
-    database: EduTrackDatabase
+    private val assignmentRepository: AssignmentRepository
 ) : ViewModel() {
-    val assignments = database.assignmentDao.getAllAssignments()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val assignmentFlow = assignmentRepository.getAllAssignments()
+    private val subjectFlow = assignmentRepository.getAllSubjects()
+
+    val assignments = combine(
+        assignmentFlow,
+        subjectFlow
+    ) { assignments, subjects ->
+
+        assignments.map { assignment ->
+
+            val subjectName = subjects.find {
+                it.subjectId == assignment.subjectId
+            }?.subjectName ?: "Unknown"
+
+            TeacherAssignmentUi(
+                assignment = assignment,
+                subjectName = subjectName
+            )
+        }
+
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        emptyList()
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -85,20 +111,20 @@ fun TeacherAssignmentListScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(list) { assignment ->
+                items(list) { item  ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
                                 // Navigate to Submissions View
-                                navController.navigate(Screen.ViewSubmissions.createRoute(assignment.id))
+                                navController.navigate(Screen.ViewSubmissions.createRoute(item.assignment.id))
                             },
                         colors = CardDefaults.cardColors(containerColor = Color.White),
                         elevation = CardDefaults.cardElevation(2.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text(text = assignment.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                            Text(text = "Subject: ${assignment.subject}", color = Color(0xFF6200EE), fontSize = 14.sp)
+                            Text(text = item.assignment.title, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            Text(text = "Subject: ${item.subjectName}", color = Color(0xFF6200EE), fontSize = 14.sp)
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(text = "Click to view submissions", color = Color.Gray, fontSize = 12.sp)
                         }

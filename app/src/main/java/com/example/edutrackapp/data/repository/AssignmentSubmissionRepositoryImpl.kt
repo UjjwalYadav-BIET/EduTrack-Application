@@ -11,6 +11,11 @@ import javax.inject.Inject
 class AssignmentSubmissionRepositoryImpl @Inject constructor(
     private val submissionDao: AssignmentSubmissionDao
 ) : AssignmentSubmissionRepository {
+    override suspend fun getSubmissionById(
+        id: Int
+    ): AssignmentSubmissionEntity? {
+        return submissionDao.getSubmissionById(id)
+    }
 
     override suspend fun submitAssignment(submission: AssignmentSubmissionEntity) {
         submissionDao.submitAssignment(submission)
@@ -43,17 +48,13 @@ class AssignmentSubmissionRepositoryImpl @Inject constructor(
         return submissionDao.getSubmissionByStudent(assignmentId, rollNo)
     }
 
-    override suspend fun updateMarks(
+    override suspend fun evaluateSubmission(
         submissionId: Int,
-        marks: Int
-    ) {
-        submissionDao.updateMarks(submissionId, marks)
-    }
-
-    override suspend fun updateFeedback(
-        submissionId: Int,
+        marks: Int,
         feedback: String
     ) {
-        submissionDao.updateFeedback(submissionId, feedback)
+        submissionDao.evaluateSubmission(submissionId, marks, feedback)
     }
+
+
 }

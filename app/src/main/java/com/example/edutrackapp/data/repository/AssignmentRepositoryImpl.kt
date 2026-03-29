@@ -4,6 +4,7 @@ import com.example.edutrackapp.Domain.repository.AssignmentRepository
 import com.example.edutrackapp.cms.core.data.local.dao.AssignmentDao
 import com.example.edutrackapp.cms.core.data.local.dao.AssignmentWithSubmissions
 import com.example.edutrackapp.cms.core.data.local.entity.AssignmentEntity
+import com.example.edutrackapp.data.local.Attendence.SubjectEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -27,17 +28,15 @@ class AssignmentRepositoryImpl @Inject constructor(
         return assignmentDao.getAllAssignments()
     }
 
-    override fun getAssignmentsByBatch(batch: String): Flow<List<AssignmentEntity>> {
-        return assignmentDao.getAssignmentsByBatch(batch)
-    }
 
-    override fun getAssignmentsBySubject(subject: String): Flow<List<AssignmentEntity>> {
+    override fun getAssignmentsBySubject(subject: Int): Flow<List<AssignmentEntity>> {
         return assignmentDao.getAssignmentsBySubject(subject)
     }
 
-    override fun getAssignmentsByTeacher(teacherId: String): Flow<List<AssignmentEntity>> {
+    override fun getAssignmentsByTeacher(teacherId: Int): Flow<List<AssignmentEntity>> {
         return assignmentDao.getAssignmentsByTeacher(teacherId)
     }
+
 
     override suspend fun getAssignmentById(id: Int): AssignmentEntity? {
         return assignmentDao.getAssignmentById(id)
@@ -53,5 +52,9 @@ class AssignmentRepositoryImpl @Inject constructor(
         rollNo: String
     ): Flow<List<AssignmentEntity>> {
         return assignmentDao.getPendingAssignments(rollNo)
+    }
+
+    override fun getAllSubjects(): Flow<List<SubjectEntity>> {
+        return assignmentDao.getAllSubjects()
     }
 }

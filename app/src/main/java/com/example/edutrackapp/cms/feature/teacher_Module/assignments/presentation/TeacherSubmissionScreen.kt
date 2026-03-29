@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,9 +31,13 @@ import com.example.edutrackapp.Domain.repository.AssignmentSubmissionRepository
 import com.example.edutrackapp.cms.core.data.local.EduTrackDatabase
 import com.example.edutrackapp.cms.core.data.local.entity.AssignmentSubmissionEntity
 import com.example.edutrackapp.cms.core.data.local.entity.SubmissionEntity
+import com.example.edutrackapp.cms.ui.navigation.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 // 1. ViewModel to fetch submissions
@@ -41,6 +46,16 @@ class TeacherSubmissionViewModel @Inject constructor(
     private val repository: AssignmentSubmissionRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
+
+    fun evaluateSubmission(
+        submissionId: Int,
+        marks: Int,
+        feedback: String
+    ) {
+        viewModelScope.launch {
+            repository.evaluateSubmission(submissionId, marks, feedback)
+        }
+    }
 
     private val assignmentId: Int = checkNotNull(savedStateHandle["assignmentId"])
 
@@ -93,88 +108,197 @@ fun TeacherSubmissionScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-
                 items(submissionList) { submission ->
-                    SubmissionCard(submission) {
-                        // --- UPDATED UNIVERSAL OPEN LOGIC ---
-                        try {
-                            val uri = Uri.parse(submission.fileUri)
+                    SubmissionCard(
+                        submission = submission,
+                        navController = navController,
 
-                            // 1. Auto-detect the file type (PDF, Image, etc.)
-                            // This ensures we don't force "PDF" if it's an Image
-                            val mimeType = context.contentResolver.getType(uri) ?: "*/*"
+                        // 📂 OPEN FILE
+                        onOpenClick = {
+                            try {
+                                val uri = Uri.parse(submission.fileUri)
+                                val mimeType = context.contentResolver.getType(uri) ?: "*/*"
 
-                            val intent = Intent(Intent.ACTION_VIEW).apply {
-                                setDataAndType(uri, mimeType) // Use detected type
-                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                                        Intent.FLAG_ACTIVITY_NO_HISTORY
+                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                    setDataAndType(uri, mimeType)
+                                    flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                            Intent.FLAG_ACTIVITY_NO_HISTORY
+                                }
+
+                                val chooser = Intent.createChooser(intent, "Open File With...")
+                                context.startActivity(chooser)
+
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Cannot open this file format.", Toast.LENGTH_SHORT).show()
                             }
-
-                            // 2. Open the Chooser Menu (Force "Open With...")
-                            val chooser = Intent.createChooser(intent, "Open File With...")
-                            context.startActivity(chooser)
-
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "Cannot open this file format.", Toast.LENGTH_SHORT).show()
-                        }
-                        // ------------------------------------
-                    }
+                        },
+                    )
                 }
+
+//                items(submissionList) { submission ->
+//                    SubmissionCard(submission,onEvaluateClick = {
+//                        navController.navigate("evaluate_submission/${submission.id}")
+//                    }) {
+//                        // --- UPDATED UNIVERSAL OPEN LOGIC ---
+//                        try {
+//                            val uri = Uri.parse(submission.fileUri)
+//
+//                            // 1. Auto-detect the file type (PDF, Image, etc.)
+//                            // This ensures we don't force "PDF" if it's an Image
+//                            val mimeType = context.contentResolver.getType(uri) ?: "*/*"
+//
+//                            val intent = Intent(Intent.ACTION_VIEW).apply {
+//                                setDataAndType(uri, mimeType) // Use detected type
+//                                flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+//                                        Intent.FLAG_ACTIVITY_NO_HISTORY
+//                            }
+//
+//                            // 2. Open the Chooser Menu (Force "Open With...")
+//                            val chooser = Intent.createChooser(intent, "Open File With...")
+//                            context.startActivity(chooser)
+//
+//                        } catch (e: Exception) {
+//                            Toast.makeText(context, "Cannot open this file format.", Toast.LENGTH_SHORT).show()
+//                        }
+//
+//                        // ------------------------------------
+//                    }
+//
+//                }
             }
         }
     }
 }
 
 @Composable
-fun SubmissionCard(submission: AssignmentSubmissionEntity, onOpenClick: () -> Unit) {
+fun SubmissionCard(
+    submission: AssignmentSubmissionEntity,
+    onOpenClick: () -> Unit,
+    navController: NavController,
+
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(2.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Person,
-                        null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
+
+        Column(modifier = Modifier.padding(16.dp)) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = null,
+                            tint = Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Roll No: ${submission.studentRollNo}",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
                     Text(
-                        text = "Roll No: ${submission.studentRollNo}",
-                        fontWeight = FontWeight.Bold
+                        text = "Submitted: ${submission.submissionDate}",
+                        color = Color.Gray,
+                        fontSize = 12.sp
                     )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Submitted: ${submission.submissionDate}",
-                    color = Color.Gray,
-                    fontSize = 12.sp
-                )
+
+                Button(onClick = onOpenClick) {
+                    Text("Open")
+                }
             }
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ✅ SHOW MARKS IF EXISTS
+            if (submission.marks != null) {
+                Text("Marks: ${submission.marks}", color = Color(0xFF4CAF50))
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ✏️ Evaluate Button
             Button(
-                onClick = onOpenClick,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE0E0E0)),
-                contentPadding = PaddingValues(horizontal = 12.dp)
+                onClick = {
+                    navController.navigate("evaluate_submission/${submission.id}")
+                },
+                enabled = submission.marks==null,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (submission.marks == null) Color(0xFF6200EE) else Color.Gray
+                ),
+
             ) {
-                Icon(
-                    Icons.Default.AttachFile,
-                    null,
-                    tint = Color.Black,
-                    modifier = Modifier.size(16.dp)
+                Text(
+                    text = if (submission.marks == null) "Evaluate" else "Already Evaluted",
+                    color = Color.White
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Open", color = Color.Black)
             }
         }
     }
 }
+
+//@Composable
+//fun SubmissionCard(submission: AssignmentSubmissionEntity, onOpenClick: () -> Unit,onEvaluateClick: () -> Unit) {
+//    Card(
+//        colors = CardDefaults.cardColors(containerColor = Color.White),
+//        elevation = CardDefaults.cardElevation(2.dp),
+//        modifier = Modifier.fillMaxWidth().clickable(onClick=onOpenPdf);
+//    ) {
+//        Row(
+//            modifier = Modifier
+//                .padding(16.dp)
+//                .fillMaxWidth(),
+//            verticalAlignment = Alignment.CenterVertically,
+//            horizontalArrangement = Arrangement.SpaceBetween
+//        ) {
+//            Column {
+//                Row(verticalAlignment = Alignment.CenterVertically) {
+//                    Icon(
+//                        Icons.Default.Person,
+//                        null,
+//                        tint = Color.Gray,
+//                        modifier = Modifier.size(16.dp)
+//                    )
+//                    Spacer(modifier = Modifier.width(8.dp))
+//                    Text(
+//                        text = "Roll No: ${submission.studentRollNo}",
+//                        fontWeight = FontWeight.Bold
+//                    )
+//                }
+//                Spacer(modifier = Modifier.height(4.dp))
+//                Text(
+//                    text = "Submitted: ${submission.submissionDate}",
+//                    color = Color.Gray,
+//                    fontSize = 12.sp
+//                )
+//            }
+//
+//            Button(
+//                onClick = onOpenClick,
+//                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE0E0E0)),
+//                contentPadding = PaddingValues(horizontal = 12.dp)
+//            ) {
+//                Icon(
+//                    Icons.Default.AttachFile,
+//                    null,
+//                    tint = Color.Black,
+//                    modifier = Modifier.size(16.dp)
+//                )
+//                Spacer(modifier = Modifier.width(8.dp))
+//                Text("Open", color = Color.Black)
+//            }
+//        }
+//    }
+//}

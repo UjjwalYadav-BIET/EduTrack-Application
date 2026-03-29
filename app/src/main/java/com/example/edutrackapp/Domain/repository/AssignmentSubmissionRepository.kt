@@ -7,6 +7,10 @@ import kotlinx.coroutines.flow.Flow
 
 interface AssignmentSubmissionRepository {
 
+    suspend fun getSubmissionById(
+        id: Int
+    ): AssignmentSubmissionEntity?
+
     suspend fun submitAssignment(submission: AssignmentSubmissionEntity)
 
     suspend fun updateSubmission(submission: AssignmentSubmissionEntity)
@@ -26,13 +30,14 @@ interface AssignmentSubmissionRepository {
         rollNo: String
     ): AssignmentSubmissionEntity?
 
-    suspend fun updateMarks(
+    suspend fun evaluateSubmission(
         submissionId: Int,
-        marks: Int
-    )
-
-    suspend fun updateFeedback(
-        submissionId: Int,
+        marks: Int,
         feedback: String
     )
+
+//    suspend fun updateFeedback(
+//        submissionId: Int,
+//        feedback: String
+//    )
 }

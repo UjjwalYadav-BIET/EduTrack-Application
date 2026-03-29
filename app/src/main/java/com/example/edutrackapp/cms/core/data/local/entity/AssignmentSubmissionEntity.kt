@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.ForeignKey
 import androidx.room.Index
+import com.example.edutrackapp.cms.feature.student_module.assignments.presentation.SubmissionStatus
 
 
 @Entity(
@@ -18,7 +19,10 @@ import androidx.room.Index
         )
     ],
 
-    indices = [Index(value = ["assignmentId"])]
+    indices = [
+        Index(value = ["assignmentId"]),
+        Index(value = ["studentRollNo"])
+    ]
 )
 
 data class AssignmentSubmissionEntity(
@@ -40,5 +44,5 @@ data class AssignmentSubmissionEntity(
 
     val feedback: String? = null, // Teacher comments
 
-    val status: String = "SUBMITTED" // SUBMITTED / LATE / REVIEWED
+    val status: String = SubmissionStatus.SUBMITTED
 )

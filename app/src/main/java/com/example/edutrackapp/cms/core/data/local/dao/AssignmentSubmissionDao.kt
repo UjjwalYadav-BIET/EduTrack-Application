@@ -44,25 +44,21 @@ interface AssignmentSubmissionDao {
         rollNo: String
     ): AssignmentSubmissionEntity?
 
+    @Query("SELECT * FROM assignment_submissions WHERE id = :id")
+    suspend fun getSubmissionById(id: Int): AssignmentSubmissionEntity?
+
     // Teacher gives marks
     @Query("""
-        UPDATE assignment_submissions
-        SET marks = :marks
-        WHERE id = :submissionId
+    UPDATE assignment_submissions
+    SET marks = :marks,
+        feedback = :feedback,
+        status = 'REVIEWED'
+    WHERE id = :submissionId 
+    AND status != 'REVIEWED'
     """)
-    suspend fun updateMarks(
+    suspend fun evaluateSubmission(
         submissionId: Int,
-        marks: Int
-    )
-
-    // Teacher adds feedback
-    @Query("""
-        UPDATE assignment_submissions
-        SET feedback = :feedback
-        WHERE id = :submissionId
-    """)
-    suspend fun updateFeedback(
-        submissionId: Int,
+        marks: Int,
         feedback: String
     )
 }

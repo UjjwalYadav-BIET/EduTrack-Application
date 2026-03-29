@@ -23,6 +23,7 @@ import javax.inject.Inject
 class StudentAssignmentListViewModel @Inject constructor(
     private val assignmentRepository: AssignmentRepository,
     private val submissionRepository: AssignmentSubmissionRepository,
+
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -30,8 +31,9 @@ class StudentAssignmentListViewModel @Inject constructor(
 
     val uiState = combine(
         assignmentRepository.getAllAssignments(),
-        submissionRepository.getSubmissionsByStudent(studentRollNo)
-    ) { assignments, submissions ->
+        submissionRepository.getSubmissionsByStudent(studentRollNo),
+        assignmentRepository.getAllSubjects()
+    ) { assignments, submissions, subjects ->
 
         assignments.map { assignment ->
 
@@ -39,8 +41,13 @@ class StudentAssignmentListViewModel @Inject constructor(
                 it.assignmentId == assignment.id
             }
 
+            val subjectName = subjects.find {
+                it.subjectId == assignment.subjectId
+            }?.subjectName ?: "Unknown"
+
             AssignmentUiState(
                 assignment = assignment,
+                subjectName = subjectName,
                 isSubmitted = isSubmitted
             )
         }
@@ -50,6 +57,8 @@ class StudentAssignmentListViewModel @Inject constructor(
         SharingStarted.WhileSubscribed(5000),
         emptyList()
     )
+
+
 
     // ⭐ ADD THIS HERE
     val pendingAssignments = assignmentRepository
@@ -82,15 +91,34 @@ class StudentAssignmentListViewModel @Inject constructor(
                 Locale.getDefault()
             ).format(Date())
 
+            val assignment = assignmentRepository.getAssignmentById(assignmentId)
+
+            val currentTime = System.currentTimeMillis()
+
+            val status = if (assignment != null && currentTime > assignment.dueDate) {
+                "LATE"
+            } else {
+                "SUBMITTED"
+            }
+            val existingSubmission = submissionRepository
+                .getSubmissionByStudent(assignmentId, studentRollNo)
+
+            if (existingSubmission != null) {
+                // Already submitted → skip or update
+                return@launch
+            }
+
             val submission = AssignmentSubmissionEntity(
                 assignmentId = assignmentId,
                 studentRollNo = studentRollNo,
                 submissionDate = date,
-                submissionTime = System.currentTimeMillis(),
-                fileUri = fileUri.toString()
+                submissionTime = currentTime,
+                fileUri = fileUri.toString(),
+                status = status
             )
 
             submissionRepository.submitAssignment(submission)
+
         }
     }
 }

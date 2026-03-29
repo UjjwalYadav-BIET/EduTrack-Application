@@ -58,7 +58,7 @@ fun StudentAssignmentCard(
                     Icon(Icons.Default.Assignment, null, tint = Color(0xFF009688))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = assignment.subject,
+                        text = item.subjectName,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
                         color = Color.Gray
