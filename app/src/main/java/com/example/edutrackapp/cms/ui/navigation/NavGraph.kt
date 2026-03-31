@@ -26,6 +26,7 @@ import com.example.edutrackapp.cms.feature.teacher_Module.attendance.presentatio
 import com.example.edutrackapp.cms.feature.teacher_Module.attendance.presentation.MarkAttendanceScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.dashboard.TeacherDashboardScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.notices.presentation.CreateNoticeScreen
+import com.example.edutrackapp.cms.feature.teacher_Module.notices.presentation.TeacherNoticeListScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.profile.presentation.TeacherProfileScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.results.presentation.EnterMarksScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.timetable.presentation.TimeTableScreen
@@ -159,6 +160,9 @@ fun EduTrackNavGraph(navController: NavHostController) {
             arguments = listOf(navArgument("submissionId") { type = NavType.IntType })
         ) {
             TeacherEvaluateSubmissionScreen(navController = navController)
+        }
+        composable(route = Screen.TeacherNoticeList.route) {
+            TeacherNoticeListScreen(navController = navController)
         }
     }
 }

@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.example.edutrackapp.cms.core.data.local.EduTrackDatabase
 import com.example.edutrackapp.cms.core.data.local.dao.AssignmentDao
 import com.example.edutrackapp.cms.core.data.local.dao.AssignmentSubmissionDao
+import com.example.edutrackapp.cms.core.data.local.dao.NoticeDao
 import com.example.edutrackapp.data.local.AttendanceDao
 import com.example.edutrackapp.data.local.TimeTableDao
 import dagger.Module
@@ -53,6 +54,13 @@ object AppModule {
     @Singleton
     fun provideAssignmentDao(db: EduTrackDatabase): AssignmentDao {
         return db.assignmentDao
+    }
+
+    @Provides
+    fun provideNoticeDao(
+        db: EduTrackDatabase
+    ): NoticeDao {
+        return db.noticeDao
     }
 
     @Provides

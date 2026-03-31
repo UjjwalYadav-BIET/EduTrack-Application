@@ -14,12 +14,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.edutrackapp.cms.core.data.local.entity.NoticeEntity
+import com.example.edutrackapp.cms.core.util.formatDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,7 +29,6 @@ fun StudentNoticeScreen(
     navController: NavController,
     viewModel: StudentNoticeViewModel = hiltViewModel()
 ) {
-    // Collect the flow from the database
     val notices = viewModel.notices.collectAsState().value
 
     Scaffold(
@@ -79,6 +80,7 @@ fun NoticeCard(notice: NoticeEntity) {
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
+        val context = LocalContext.current
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically
@@ -92,32 +94,52 @@ fun NoticeCard(notice: NoticeEntity) {
                     color = Color.Black
                 )
             }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "Posted on: ${notice.date} | By: ${notice.postedBy}",
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
-
             Spacer(modifier = Modifier.height(12.dp))
-
             Text(
                 text = notice.description,
                 fontSize = 14.sp,
                 lineHeight = 20.sp,
                 color = Color.DarkGray
             )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Posted on: ${formatDate(notice.createdAt)}",
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
 
-            // Badge for "ALL" or "CS-A"
             Spacer(modifier = Modifier.height(12.dp))
-            Box(
-                modifier = Modifier
-                    .background(Color(0xFFE0F2F1), RoundedCornerShape(4.dp))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Text(text = "Target: ${notice.targetBatch}", fontSize = 10.sp, color = Color(0xFF00695C))
+
+
+
+            notice.attachmentUrl?.let { fileUri ->
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    modifier = Modifier.fillMaxWidth().height(40.dp),
+                    shape = RoundedCornerShape(5.dp),
+                    onClick = {
+                        try {
+                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW)
+                            intent.setDataAndType(
+                                android.net.Uri.parse(fileUri),
+                                "application/pdf"
+                            )
+                            intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            android.widget.Toast.makeText(
+                                context,
+                                "No app found to open file",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                ) {
+                    Text("View Attachment")
+                }
             }
         }
     }

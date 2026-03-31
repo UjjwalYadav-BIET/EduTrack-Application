@@ -3,6 +3,7 @@ package com.example.edutrackapp.cms.feature.teacher_Module.notices.presentation
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.edutrackapp.Domain.repository.NoticeRepository
 import com.example.edutrackapp.cms.core.data.local.EduTrackDatabase
 import com.example.edutrackapp.cms.core.data.local.entity.NoticeEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,14 +15,16 @@ import javax.inject.Inject
 
 @HiltViewModel
 class NoticeViewModel @Inject constructor(
-    private val database: EduTrackDatabase // Injecting DB directly for speed
+    private val repository: NoticeRepository
 ) : ViewModel() {
 
     var title = mutableStateOf("")
     var description = mutableStateOf("")
+    var attachmentUri = mutableStateOf<String?>(null)
 
-    // "ALL" means everyone sees it. "CS-A" means only that batch.
-    var targetBatch = mutableStateOf("ALL")
+    var targetYear = mutableStateOf(2)
+    var targetBranch = mutableStateOf("CSE")
+    var targetSection = mutableStateOf("A")
 
     fun onTitleChange(text: String) { title.value = text }
     fun onDescChange(text: String) { description.value = text }
@@ -29,17 +32,20 @@ class NoticeViewModel @Inject constructor(
     fun postNotice(onSuccess: () -> Unit) {
         if (title.value.isNotEmpty() && description.value.isNotEmpty()) {
             viewModelScope.launch {
-                val currentDate = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date())
 
                 val notice = NoticeEntity(
                     title = title.value,
                     description = description.value,
-                    date = currentDate,
-                    postedBy = "Prof. Ujjwal",
-                    targetBatch = targetBatch.value
+                    createdAt = System.currentTimeMillis(),
+                    teacherId = 1, // 🔥 Replace with logged-in teacher ID
+                    targetYear = targetYear.value,
+                    targetBranch = targetBranch.value,
+                    targetSection = targetSection.value,
+                    attachmentUrl = attachmentUri.value,
+                    isActive = true
                 )
 
-                database.noticeDao.insertNotice(notice)
+                repository.insertNotice(notice)
                 onSuccess()
             }
         }

@@ -28,7 +28,7 @@ import com.example.edutrackapp.data.local.timeTable.TimeTableEntity
         TimeTableEntity::class,
         AssignmentSubmissionEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class EduTrackDatabase : RoomDatabase() {

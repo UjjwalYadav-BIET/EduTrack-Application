@@ -2,6 +2,7 @@ package com.example.edutrackapp.cms.feature.student_module.notices.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.edutrackapp.Domain.repository.NoticeRepository
 import com.example.edutrackapp.cms.core.data.local.EduTrackDatabase
 import com.example.edutrackapp.cms.core.data.local.entity.NoticeEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -12,14 +13,20 @@ import javax.inject.Inject
 
 @HiltViewModel
 class StudentNoticeViewModel @Inject constructor(
-    database: EduTrackDatabase
+    private val repository: NoticeRepository
 ) : ViewModel() {
 
-    // Using Flow to get real-time updates from Room
-    val notices: StateFlow<List<NoticeEntity>> = database.noticeDao.getAllNotices()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    private val studentYear = 2
+    private val studentBranch = "CSE"
+    private val studentSection = "A"
+
+    val notices = repository.getNoticesForStudent(
+        studentYear,
+        studentBranch,
+        studentSection
+    ).stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        emptyList()
+    )
 }

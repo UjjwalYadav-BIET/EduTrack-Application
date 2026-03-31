@@ -1,25 +1,26 @@
 package com.example.edutrackapp.cms.feature.teacher_Module.notices.presentation
 
+import android.net.Uri
 import android.widget.Toast
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Campaign
-import androidx.compose.material.icons.filled.Subject
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.material3.AlertDialogDefaults.titleContentColor
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.edutrackapp.cms.ui.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,115 +30,164 @@ fun CreateNoticeScreen(
 ) {
     val context = LocalContext.current
 
+    val years = listOf(1, 2, 3, 4)
+    val branches = listOf("CSE", "IT", "ME")
+    val sections = listOf("A", "B", "C")
+
+    // 📎 File Picker
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            val type = context.contentResolver.getType(it)
+
+            if (type == "application/pdf" || type?.startsWith("image/") == true) {
+                viewModel.attachmentUri.value = it.toString()
+            } else {
+                Toast.makeText(context, "Only PDF/Image allowed", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Post New Notice") },
+                title = { Text("Post Notice") },
+
+                // 🔙 Back Button (Left Side)
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    IconButton(onClick = {
+                        navController.popBackStack()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back"
+                        )
                     }
                 },
+
+                // 📋 Right Side Icon (View All Notices)
+                actions = {
+                    IconButton(onClick = {
+                        navController.navigate(Screen.TeacherNoticeList.route) {
+                            launchSingleTop = true
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.List,
+                            contentDescription = "All Notices"
+                        )
+                    }
+                },
+
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF6200EE),
+                    containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
                 )
             )
         }
-    ) { paddingValues ->
+    ) { padding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Header Icon
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
+
+            // 🔹 Title
+            OutlinedTextField(
+                value = viewModel.title.value,
+                onValueChange = viewModel::onTitleChange,
+                label = { Text("Title") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // 🔹 Description
+            OutlinedTextField(
+                value = viewModel.description.value,
+                onValueChange = viewModel::onDescChange,
+                label = { Text("Description") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+            )
+
+            // 🔽 Year Dropdown
+            DropdownField(
+                label = "Select Year",
+                options = years.map { it.toString() },
+                selected = viewModel.targetYear.value.toString()
             ) {
-                Icon(
-                    imageVector = Icons.Default.Campaign,
-                    contentDescription = null,
-                    tint = Color(0xFF6200EE),
-                    modifier = Modifier.size(64.dp)
+                viewModel.targetYear.value = it.toInt()
+            }
+
+            // 🔽 Branch Dropdown
+            DropdownField(
+                label = "Select Branch",
+                options = branches,
+                selected = viewModel.targetBranch.value
+            ) {
+                viewModel.targetBranch.value = it
+            }
+
+            // 🔽 Section Dropdown
+            DropdownField(
+                label = "Select Section",
+                options = sections,
+                selected = viewModel.targetSection.value
+            ) {
+                viewModel.targetSection.value = it
+            }
+
+            // 📎 Attach File Button
+            Button(
+                onClick = { filePickerLauncher.launch("*/*") },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    if (viewModel.attachmentUri.value == null)
+                        "Attach File"
+                    else
+                        "Change Attachment"
                 )
             }
 
-            // Title Input
-            OutlinedTextField(
-                value = viewModel.title.value,
-                onValueChange = { viewModel.onTitleChange(it) },
-                label = { Text("Notice Title") },
-                leadingIcon = { Icon(Icons.Default.Subject, null) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            // Description Input
-            OutlinedTextField(
-                value = viewModel.description.value,
-                onValueChange = { viewModel.onDescChange(it) },
-                label = { Text("Details") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp),
-                shape = RoundedCornerShape(12.dp),
-                maxLines = 10
-            )
-
-            // Target Batch Selector (Simple Radio Look-alike)
-            Text(text = "Target Audience:", fontWeight = FontWeight.Bold)
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                BatchChip(
-                    text = "All Students",
-                    selected = viewModel.targetBatch.value == "ALL",
-                    onClick = { viewModel.targetBatch.value = "ALL" }
-                )
-                BatchChip(
-                    text = "CS-A Only",
-                    selected = viewModel.targetBatch.value == "CS-A",
-                    onClick = { viewModel.targetBatch.value = "CS-A" }
+            // 📄 Show file selected
+            viewModel.attachmentUri.value?.let {
+                Text(
+                    text = "File Selected",
+                    fontWeight = FontWeight.Medium
                 )
             }
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Post Button
+            // 🚀 Submit Button
             Button(
                 onClick = {
+                    if (viewModel.title.value.isBlank()) {
+                        Toast.makeText(context, "Enter title", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+
+                    if (viewModel.description.value.isBlank()) {
+                        Toast.makeText(context, "Enter description", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+
                     viewModel.postNotice {
-                        Toast.makeText(context, "Notice Posted Successfully!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Notice Posted", Toast.LENGTH_SHORT).show()
                         navController.popBackStack()
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE)),
-                shape = RoundedCornerShape(12.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("BROADCAST NOTICE", fontWeight = FontWeight.Bold)
+                Text("POST NOTICE")
             }
         }
-    }
-}
-
-@Composable
-fun BatchChip(text: String, selected: Boolean, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(if (selected) Color(0xFF6200EE) else Color.LightGray.copy(alpha=0.3f))
-            .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        Text(
-            text = text,
-            color = if (selected) Color.White else Color.Black,
-            fontWeight = FontWeight.Medium
-        )
     }
 }
