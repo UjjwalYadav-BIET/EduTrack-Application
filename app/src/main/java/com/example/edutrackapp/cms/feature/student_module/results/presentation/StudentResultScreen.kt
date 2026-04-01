@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.edutrackapp.Domain.Model.StudentResultUi
 import com.example.edutrackapp.cms.core.data.local.entity.ResultEntity
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,8 +29,6 @@ fun StudentResultScreen(
     viewModel: StudentResultViewModel = hiltViewModel()
 ) {
     val results = viewModel.results.collectAsState().value
-
-    // Define the Student Brand Color (Teal)
     val studentColor = Color(0xFF009688)
 
     Scaffold(
@@ -42,36 +41,38 @@ fun StudentResultScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = studentColor, // <--- CHANGED TO TEAL
+                    containerColor = studentColor,
                     titleContentColor = Color.White,
                     navigationIconContentColor = Color.White
                 )
             )
         }
     ) { paddingValues ->
+
         if (results.isEmpty()) {
             Box(
-                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
                 Text("No results published yet.", color = Color.Gray)
             }
         } else {
+
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .background(Color(0xFFF0F4F4)), // <--- CHANGED TO LIGHT TEAL BACKGROUND
+                    .background(Color(0xFFF7FAFA)),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Header Summary
+
                 item {
-                    // Pass the student color to the card
                     ResultSummaryCard(results, studentColor)
                 }
 
-                // Individual Subject Marks
                 items(results) { result ->
                     MarksCard(result)
                 }
@@ -80,75 +81,21 @@ fun StudentResultScreen(
     }
 }
 
-@Composable
-fun ResultSummaryCard(results: List<ResultEntity>, themeColor: Color) {
-    val totalObtained = results.sumOf { it.marksObtained.toIntOrNull() ?: 0 }
-    val totalMax = results.size * 100
-    val percentage = if (totalMax > 0) (totalObtained.toFloat() / totalMax) * 100 else 0f
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        // Use the passed theme color (Teal)
-        colors = CardDefaults.cardColors(containerColor = themeColor),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(24.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Text("Total Score", color = Color.White.copy(alpha = 0.8f))
-                Text(
-                    text = "$totalObtained / $totalMax",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-                    .padding(12.dp)
-            ) {
-                Text(
-                    text = "${"%.1f".format(percentage)}%",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
-        }
+
+
+
+fun getGrade(marks: Int): String {
+    return when {
+        marks >= 90 -> "A+"
+        marks >= 75 -> "A"
+        marks >= 60 -> "B"
+        marks >= 50 -> "C"
+        marks >= 35 -> "D"
+        else -> "F"
     }
 }
 
-@Composable
-fun MarksCard(result: ResultEntity) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text(text = result.subject, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(text = result.examType, fontSize = 12.sp, color = Color.Gray)
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.EmojiEvents, null, tint = Color(0xFFFFC107), modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = result.marksObtained,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    color = if ((result.marksObtained.toIntOrNull() ?: 0) < 35) Color.Red else Color(0xFF4CAF50)
-                )
-            }
-        }
-    }
+fun isPass(marks: Int): Boolean {
+    return marks >= 35
 }

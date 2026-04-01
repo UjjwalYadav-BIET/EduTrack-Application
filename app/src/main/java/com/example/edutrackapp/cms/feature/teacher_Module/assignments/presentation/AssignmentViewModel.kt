@@ -37,7 +37,6 @@ class AssignmentViewModel @Inject constructor(
         branch.value = value
     }
     var dueDate = mutableStateOf("")
-    var batch = mutableStateOf("CS-A")
 
     var selectedFileUri = mutableStateOf<Uri?>(null)
 

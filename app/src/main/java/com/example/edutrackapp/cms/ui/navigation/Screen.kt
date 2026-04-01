@@ -32,4 +32,10 @@ sealed class Screen(val route: String) {
     }
 
     object TeacherNoticeList : Screen("teacher_notice_list")
+
+    object TestList : Screen("test_list_screen")
+    object CreateTest : Screen("create_test_screen")
+    object EnterMarks : Screen("enter_marks/{testId}") {
+        fun createRoute(testId: Int) = "enter_marks/$testId"
+    }
 }

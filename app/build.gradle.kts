@@ -44,34 +44,34 @@ android {
 
 dependencies {
     // 1. Jetpack Compose (UI)
-    implementation(platform("androidx.compose:compose-bom:2024.02.00"))
+    implementation(platform(libs.androidx.compose.bom))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.foundation:foundation")
+    implementation(libs.androidx.compose.foundation.layout)
     debugImplementation("androidx.compose.ui:ui-tooling")
-
-
 
     // 2. Navigation
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
-    // 3. Hilt (Dependency Injection) - CRITICAL
+    // 3. Hilt (Dependency Injection)
     implementation("com.google.dagger:hilt-android:2.50")
     kapt("com.google.dagger:hilt-android-compiler:2.50")
     implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
 
-    // 4. Room Database (Offline Mode)
+    // 4. Room Database
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
 
     implementation("com.github.mhiew:android-pdf-viewer:3.2.0-beta.3")
 
-    // 5. Network (Retrofit + Converter)
+    // 5. Network
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 
-    // 6. Camera & ML Kit (For Face Recog)
+    // 6. Camera & ML Kit
     implementation("androidx.camera:camera-core:1.3.1")
     implementation("androidx.camera:camera-camera2:1.3.1")
     implementation("androidx.camera:camera-lifecycle:1.3.1")

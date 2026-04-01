@@ -10,6 +10,7 @@ import com.example.edutrackapp.data.local.Attendence.FacultySubjectEntity
 import com.example.edutrackapp.data.local.Attendence.StudentEntity
 import com.example.edutrackapp.data.local.Attendence.SubjectEntity
 import com.example.edutrackapp.data.local.AttendanceDao
+import com.example.edutrackapp.data.local.StudentDao
 import com.example.edutrackapp.data.local.TimeTableDao
 import com.example.edutrackapp.data.local.timeTable.TimeTableEntity
 
@@ -26,18 +27,23 @@ import com.example.edutrackapp.data.local.timeTable.TimeTableEntity
         AttendanceEntity::class,
         FacultySubjectEntity::class,
         TimeTableEntity::class,
+        TestEntity::class,
         AssignmentSubmissionEntity::class
     ],
-    version = 7,
+    version = 6,
     exportSchema = false
 )
 abstract class EduTrackDatabase : RoomDatabase() {
     abstract val userDao: UserDao
     abstract val noticeDao: NoticeDao
-    abstract val resultDao: ResultDao
     abstract val assignmentDao: AssignmentDao
     abstract val submissionDao: SubmissionDao
     abstract val assignmentSubmissionDao: AssignmentSubmissionDao
     abstract fun attendanceDao(): AttendanceDao
     abstract fun timeTableDao(): TimeTableDao
+
+    abstract fun resultDao(): ResultDao
+    abstract fun testDao(): TestDao
+    abstract fun studentDao(): StudentDao
+
 }

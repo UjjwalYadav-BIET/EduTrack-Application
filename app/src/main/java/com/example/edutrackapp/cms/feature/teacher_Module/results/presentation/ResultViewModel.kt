@@ -1,58 +1,94 @@
 package com.example.edutrackapp.cms.feature.teacher_Module.results.presentation
 
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.edutrackapp.Domain.Model.StudentWithMarks
+import com.example.edutrackapp.Domain.repository.ResultRepository
 import com.example.edutrackapp.cms.core.data.local.EduTrackDatabase
 import com.example.edutrackapp.cms.core.data.local.entity.ResultEntity
+import com.example.edutrackapp.cms.core.data.local.entity.TestEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class StudentResultUi(
-    val name: String,
-    val rollNo: String,
-    var marks: String = "" // State for text input
-)
 
+
+data class UiState(
+    val students: List<StudentWithMarks> = emptyList(),
+    val isLoading: Boolean = false,
+    val error: String? = null
+)
 @HiltViewModel
 class ResultViewModel @Inject constructor(
-    private val database: EduTrackDatabase
+    private val repository: ResultRepository
 ) : ViewModel() {
 
-    // Mock List of Students
-    private val _students = mutableStateListOf<StudentResultUi>()
-    val students: List<StudentResultUi> = _students
+    var tests = mutableStateListOf<TestEntity>()
+        private set
+    private val _uiState = MutableStateFlow(UiState())
+    val uiState: StateFlow<UiState> = _uiState
 
-    init {
-        // Load Dummy Students
-        val dummies = List(10) { i ->
-            StudentResultUi("Student ${i + 1}", "CS-10$i")
-        }
-        _students.addAll(dummies)
-    }
-
-    fun onMarksChange(index: Int, newMarks: String) {
-        val student = _students[index]
-        _students[index] = student.copy(marks = newMarks)
-    }
-
-    fun saveResults(examType: String, subject: String, onSuccess: () -> Unit) {
+    fun loadTests() {
         viewModelScope.launch {
-            _students.forEach { student ->
-                if (student.marks.isNotEmpty()) {
-                    val result = ResultEntity(
-                        studentName = student.name,
-                        rollNo = student.rollNo,
-                        subject = subject,
-                        examType = examType,
-                        marksObtained = student.marks,
-                        maxMarks = "100"
-                    )
-                    database.resultDao.insertResult(result)
-                }
+            tests.clear()
+            tests.addAll(repository.getAllTests())
+        }
+    }
+
+    fun loadStudents(
+        testId: Int,
+        branch: String,
+        semester: Int,
+        section: String
+    ) {
+        viewModelScope.launch {
+            _uiState.value = UiState(isLoading = true)
+
+            try {
+                val data = repository.getStudentsWithMarks(
+                    testId, branch, semester, section
+                )
+
+                _uiState.value = UiState(students = data)
+            } catch (e: Exception) {
+                _uiState.value = UiState(error = e.message)
             }
-            onSuccess()
+        }
+    }
+
+    fun createTest(test: TestEntity, onDone: () -> Unit) {
+        viewModelScope.launch {
+            repository.createTest(test)
+            onDone()
+        }
+    }
+
+    fun onMarksChange(index: Int, marks: String) {
+        val updated = _uiState.value.students.toMutableList()
+        updated[index] = updated[index].copy(marks = marks)
+        _uiState.value = _uiState.value.copy(students = updated)
+    }
+
+    fun saveResults(testId: Int, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                _uiState.value.students.forEach { student ->
+                    if (!student.marks.isNullOrBlank()) {
+                        repository.saveOrUpdateResult(
+                            testId,
+                            student.studentId,
+                            student.marks!!
+                        )
+                    }
+                }
+                onSuccess()
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(error = e.message)
+            }
         }
     }
 }

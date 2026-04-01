@@ -28,7 +28,9 @@ import com.example.edutrackapp.cms.feature.teacher_Module.dashboard.TeacherDashb
 import com.example.edutrackapp.cms.feature.teacher_Module.notices.presentation.CreateNoticeScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.notices.presentation.TeacherNoticeListScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.profile.presentation.TeacherProfileScreen
+import com.example.edutrackapp.cms.feature.teacher_Module.results.presentation.CreateTestScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.results.presentation.EnterMarksScreen
+import com.example.edutrackapp.cms.feature.teacher_Module.results.presentation.TestListScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.timetable.presentation.TimeTableScreen
 
 @Composable
@@ -91,10 +93,7 @@ fun EduTrackNavGraph(navController: NavHostController) {
         composable(route = Screen.Notices.route) {
             CreateNoticeScreen(navController = navController)
         }
-        // Result
-        composable(route = Screen.Results.route) {
-            EnterMarksScreen(navController = navController)
-        }
+
         // Profile
         composable(route = Screen.Profile.route) {
             TeacherProfileScreen(navController = navController)
@@ -163,6 +162,31 @@ fun EduTrackNavGraph(navController: NavHostController) {
         }
         composable(route = Screen.TeacherNoticeList.route) {
             TeacherNoticeListScreen(navController = navController)
+        }
+
+
+        // 🔵 Result Entry Main (Test List)
+        composable(route = Screen.Results.route) {
+            TestListScreen(navController = navController)
+        }
+
+// 🔵 Create Test
+        composable(route = Screen.CreateTest.route) {
+            CreateTestScreen(navController = navController)
+        }
+
+// 🔵 Enter Marks with testId
+        composable(
+            route = Screen.EnterMarks.route,
+            arguments = listOf(navArgument("testId") { type = NavType.IntType })
+        ) { backStackEntry ->
+
+            val testId = backStackEntry.arguments?.getInt("testId") ?: 0
+
+            EnterMarksScreen(
+                navController = navController,  // <- FIX: pass it here
+                testId = testId
+            )
         }
     }
 }
