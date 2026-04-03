@@ -21,4 +21,7 @@ interface TestDao {
 
     @Delete
     suspend fun deleteTest(test: TestEntity)
+
+    @Query("SELECT * FROM tests WHERE teacherId = :teacherId ORDER BY date DESC")
+    suspend fun getTestsByTeacher(teacherId: Int): List<TestEntity>
 }

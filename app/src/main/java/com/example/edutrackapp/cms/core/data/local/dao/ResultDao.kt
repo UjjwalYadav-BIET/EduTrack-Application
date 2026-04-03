@@ -8,6 +8,7 @@ import androidx.room.Update
 import com.example.edutrackapp.Domain.Model.StudentResultUi
 import com.example.edutrackapp.Domain.Model.StudentWithMarks
 import com.example.edutrackapp.cms.core.data.local.entity.ResultEntity
+import com.example.edutrackapp.cms.core.data.local.entity.TestEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -42,6 +43,8 @@ interface ResultDao {
     // Delete results of a test
     @Query("DELETE FROM results WHERE testId = :testId")
     suspend fun deleteResultsByTest(testId: Int)
+
+
 
     @Query("""
         SELECT 

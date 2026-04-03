@@ -21,10 +21,7 @@ interface ResultRepository {
 
     // Students + Marks (JOIN)
     suspend fun getStudentsWithMarks(
-        testId: Int,
-        branch: String,
-        semester: Int,
-        section: String
+        testId: Int
     ): List<StudentWithMarks>
 
     // Save / Update
@@ -33,6 +30,11 @@ interface ResultRepository {
         studentId: Int,
         marks: String
     )
+    suspend fun getTestsByTeacher(teacherId: Int): List<TestEntity>
+
+    suspend fun getTestById(testId: Int): TestEntity?
+
+
 
     fun getStudentResults(rollNo: Int): Flow<List<StudentResultUi>>
 }

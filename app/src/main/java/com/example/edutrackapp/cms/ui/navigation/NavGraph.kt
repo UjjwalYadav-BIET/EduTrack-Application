@@ -167,7 +167,10 @@ fun EduTrackNavGraph(navController: NavHostController) {
 
         // 🔵 Result Entry Main (Test List)
         composable(route = Screen.Results.route) {
-            TestListScreen(navController = navController)
+            TestListScreen(
+                navController = navController,
+                teacherId = 1
+            )
         }
 
 // 🔵 Create Test

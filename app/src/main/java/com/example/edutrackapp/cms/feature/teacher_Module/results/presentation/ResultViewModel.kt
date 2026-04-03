@@ -1,7 +1,9 @@
 package com.example.edutrackapp.cms.feature.teacher_Module.results.presentation
 
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.edutrackapp.Domain.Model.StudentWithMarks
@@ -24,36 +26,40 @@ data class UiState(
 )
 @HiltViewModel
 class ResultViewModel @Inject constructor(
-    private val repository: ResultRepository
+    private val repository: ResultRepository,
+
 ) : ViewModel() {
 
     var tests = mutableStateListOf<TestEntity>()
         private set
+    var selectedTest by mutableStateOf<TestEntity?>(null)
+        private set
+
+    fun loadTestById(testId: Int) {
+        viewModelScope.launch {
+            selectedTest = repository.getTestById(testId)
+        }
+    }
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState
 
-    fun loadTests() {
+
+    fun loadTestsByTeacher(teacherId: Int) {
         viewModelScope.launch {
             tests.clear()
-            tests.addAll(repository.getAllTests())
+            tests.addAll(repository.getTestsByTeacher(teacherId))
         }
     }
-
     fun loadStudents(
         testId: Int,
-        branch: String,
-        semester: Int,
-        section: String
     ) {
         viewModelScope.launch {
             _uiState.value = UiState(isLoading = true)
 
             try {
-                val data = repository.getStudentsWithMarks(
-                    testId, branch, semester, section
-                )
+                val students = repository.getStudentsWithMarks(testId)
+                _uiState.value = UiState(students = students)
 
-                _uiState.value = UiState(students = data)
             } catch (e: Exception) {
                 _uiState.value = UiState(error = e.message)
             }

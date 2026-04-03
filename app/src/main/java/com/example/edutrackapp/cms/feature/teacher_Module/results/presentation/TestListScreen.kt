@@ -1,56 +1,39 @@
 package com.example.edutrackapp.cms.feature.teacher_Module.results.presentation
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import com.example.edutrackapp.cms.core.data.local.entity.TestEntity
 import com.example.edutrackapp.cms.ui.navigation.Screen
-import kotlinx.coroutines.launch
-import kotlin.collections.emptyList
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TestListScreen(
     navController: NavController,
+    teacherId: Int,
     viewModel: ResultViewModel = hiltViewModel()
 ) {
 
     val tests = viewModel.tests
 
     LaunchedEffect(Unit) {
-        viewModel.loadTests()
+        viewModel.loadTestsByTeacher(teacherId)
+    }
+    LaunchedEffect(Unit) {
+        viewModel.loadStudents(tests.firstOrNull()?.testId ?: 0)
     }
     Scaffold(
-
         topBar = {
             TopAppBar(
                 title = { Text("Enter Marks") },
@@ -66,31 +49,90 @@ fun TestListScreen(
                 )
             )
         },
+
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
                     navController.navigate(Screen.CreateTest.route)
                 }
             ) {
-                Text("+")
+                Icon(Icons.Default.Add, contentDescription = "Add Test")
             }
         }
+
     ) { paddingValues ->
-        LazyColumn {
-            items(tests) { test ->
-                Card(
-                    modifier = Modifier
-                        .padding(8.dp)
-                        .fillMaxWidth()
-                        .clickable {
-                            navController.navigate(
-                                Screen.EnterMarks.createRoute(test.testId)
+
+        // ✅ EMPTY STATE
+        if (tests.isEmpty()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "No Tests Created Yet",
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        // ✅ LIST
+        else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = paddingValues
+            ) {
+
+                items(tests) { test ->
+
+                    Card(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth()
+                            .clickable {
+                                navController.navigate(
+                                    Screen.EnterMarks.createRoute(test.testId)
+                                )
+                            },
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+
+                            // Test Name
+                            Text(
+                                text = test.testName,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            // Subject (currently ID)
+                            Text(
+                                text = "Subject ID: ${test.subject}",
+                                color = Color.Gray
+                            )
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            // Class Info
+                            Text(
+                                text = "Branch: ${test.branch} | Year: ${test.year} | Sec: ${test.section}",
+                                color = Color.Gray
+                            )
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            // Created Date
+                            Text(
+                                text = "Created: ${test.date}",
+                                color = Color.LightGray
                             )
                         }
-                ) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text(test.testName, fontWeight = FontWeight.Bold)
-                        Text("Subject: ${test.subject}", fontWeight = FontWeight.Bold)
                     }
                 }
             }

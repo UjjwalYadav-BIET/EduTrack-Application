@@ -39,17 +39,25 @@ class ResultRepositoryImpl(
 
     // ---------------- JOIN ----------------
     override suspend fun getStudentsWithMarks(
-        testId: Int,
-        branch: String,
-        semester: Int,
-        section: String
+        testId: Int
     ): List<StudentWithMarks> {
-        return resultDao.getStudentsWithMarks(
-            testId,
-            branch,
-            semester,
-            section
-        )
+
+        return testDao.getTestById(testId)?.let { test ->
+            resultDao.getStudentsWithMarks(
+                testId,
+                test.branch,
+                test.semester,
+                test.section
+            )
+        } ?: emptyList()
+    }
+
+    override suspend fun getTestsByTeacher(teacherId: Int): List<TestEntity> {
+        return testDao.getTestsByTeacher(teacherId)
+    }
+
+    override suspend fun getTestById(testId: Int): TestEntity? {
+        return testDao.getTestById(testId)
     }
 
     // ---------------- SAVE / UPDATE ----------------

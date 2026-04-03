@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -31,9 +32,11 @@ fun EnterMarksScreen(
 
     val filledCount = state.students.count { !it.marks.isNullOrBlank() }
 
-    LaunchedEffect(Unit) {
-        viewModel.loadStudents(testId, "CSE", 5, "A")
+    LaunchedEffect(testId) {
+        viewModel.loadStudents(testId)
+        viewModel.loadTestById(testId)
     }
+    val maxMarks = viewModel.selectedTest?.maxMarks ?: 0
 
     Scaffold(
         topBar = {
@@ -84,7 +87,7 @@ fun EnterMarksScreen(
 
                 // Error
                 state.error?.let {
-                    Text("Error: $it", color = Color.Red)
+                    Text("Error: $it", color = Color.Black)
                 }
 
                 // Progress
@@ -103,27 +106,77 @@ fun EnterMarksScreen(
                         val isEmpty = student.marks.isNullOrBlank()
 
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            border = if (isEmpty) BorderStroke(1.dp, Color.Red) else null
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White
+                            ),
+                            border = BorderStroke(1.dp, Color.Gray),
+                            elevation = CardDefaults.cardElevation(2.dp)
                         ) {
                             Row(
-                                modifier = Modifier.padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column {
-                                    Text(student.name)
-                                    Text("Roll: ${student.rollNo}")
+
+                                // 👈 LEFT SIDE (Student Info)
+                                Column(
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(
+                                        text = student.name,
+                                        color = Color.Black,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+
+                                    Spacer(modifier = Modifier.height(4.dp))
+
+                                    Text(
+                                        text = "Roll: ${student.rollNo}",
+                                        color = Color.DarkGray
+                                    )
                                 }
 
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                // 👉 RIGHT SIDE (Marks Input)
                                 OutlinedTextField(
                                     value = student.marks ?: "",
-                                    onValueChange = {
-                                        if (it == "AB" || (it.toIntOrNull() in 0..100)) {
-                                            viewModel.onMarksChange(index, it)
+                                    onValueChange = { input ->
+
+                                        val number = input.toIntOrNull()
+
+                                        if (
+                                            input.isEmpty() ||                  // ✅ allow clearing
+                                            input == "A" ||                   // ✅ allow AB
+                                            (number != null && number in 0..maxMarks)  // ✅ valid number
+                                        ) {
+                                            viewModel.onMarksChange(index, input)
                                         }
                                     },
-                                    modifier = Modifier.width(100.dp),
-                                    singleLine = true
+                                    modifier = Modifier.width(80.dp),
+                                    singleLine = true,
+
+                                    textStyle = LocalTextStyle.current.copy(color = Color.Black),
+
+                                    placeholder = {
+                                        Text(
+                                            text = if (maxMarks != null) "0 / $maxMarks" else "Loading...",
+                                            color = Color.Gray
+                                        )
+                                    },
+
+                                    // ✅ Rounded modern shape
+                                    shape = MaterialTheme.shapes.medium,
+
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = Color(0xFF6200EE),
+                                        unfocusedBorderColor = Color.Gray,
+                                        cursorColor = Color.Black
+                                    )
                                 )
                             }
                         }
