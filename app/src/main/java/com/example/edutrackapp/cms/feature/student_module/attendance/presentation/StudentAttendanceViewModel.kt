@@ -1,47 +1,71 @@
 package com.example.edutrackapp.cms.feature.student_module.attendance.presentation
 
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-data class SubjectAttendance(
-    val subjectName: String,
-    val attended: Int,
-    val total: Int,
-    val color: Color
-) {
-    val percentage: Int
-        get() = if (total == 0) 0 else ((attended.toFloat() / total) * 100).toInt()
-}
+data class AttendanceSession(
+    val date:   String,
+    val time:   String,
+    val status: String   // "present" or "absent"
+)
 
 @HiltViewModel
-class StudentAttendanceViewModel @Inject constructor() : ViewModel() {
+class StudentAttendanceViewModel @Inject constructor(
+    private val auth: FirebaseAuth,
+    private val db:   FirebaseFirestore
+) : ViewModel() {
 
-    private val _attendanceList = mutableStateListOf<SubjectAttendance>()
-    val attendanceList: List<SubjectAttendance> = _attendanceList
+    private val _sessions = MutableStateFlow<List<AttendanceSession>>(emptyList())
+    val sessions: StateFlow<List<AttendanceSession>> = _sessions.asStateFlow()
 
-    init {
-        loadDummyData()
+    // Derived percentage — recomputes whenever sessions change
+    val overallPercentage: StateFlow<Int> = _sessions
+        .map { list ->
+            if (list.isEmpty()) 0
+            else (list.count { it.status == "present" } * 100) / list.size
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    init { loadRollNoThenListen() }
+
+    private fun loadRollNoThenListen() {
+        val uid = auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            try {
+                val doc    = db.collection("users").document(uid).get().await()
+                val rollNo = doc.getString("enrollmentId") ?: return@launch
+                listenToAttendance(rollNo)
+            } catch (e: Exception) { /* handle */ }
+        }
     }
 
-    private fun loadDummyData() {
-        _attendanceList.addAll(
-            listOf(
-                SubjectAttendance("Data Structures", 28, 30, Color(0xFF4CAF50)), // Green (Good)
-                SubjectAttendance("Operating Systems", 18, 24, Color(0xFF4CAF50)),
-                SubjectAttendance("Algorithms", 12, 20, Color(0xFFFFC107)), // Yellow (Warning)
-                SubjectAttendance("Mathematics", 15, 25, Color(0xFFFFC107)),
-                SubjectAttendance("Computer Networks", 5, 15, Color(0xFFF44336)) // Red (Danger)
-            )
-        )
-    }
-
-    fun getOverallPercentage(): Int {
-        if (_attendanceList.isEmpty()) return 0
-        val totalClasses = _attendanceList.sumOf { it.total }
-        val totalAttended = _attendanceList.sumOf { it.attended }
-        return ((totalAttended.toFloat() / totalClasses) * 100).toInt()
+    private fun listenToAttendance(rollNo: String) {
+        db.collection("attendance")
+            .whereEqualTo("rollNo", rollNo)
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null || snapshot == null) return@addSnapshotListener
+                // This fires instantly whenever the teacher submits attendance
+                _sessions.value = snapshot.documents.map { doc ->
+                    AttendanceSession(
+                        date   = doc.getString("date")   ?: "",
+                        time   = doc.getString("time")   ?: "",
+                        status = doc.getString("status") ?: "absent"
+                    )
+                }
+            }
     }
 }

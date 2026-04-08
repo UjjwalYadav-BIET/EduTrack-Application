@@ -8,6 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -16,14 +18,27 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.edutrackapp.cms.feature.student_module.dashboard.StudentViewModel  // ← import ViewModel
 import com.example.edutrackapp.cms.ui.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudentProfileScreen(
-    navController: NavController
+    navController: NavController,
+    viewModel: StudentViewModel = hiltViewModel()   // ← inject shared ViewModel
 ) {
+    // ── Collect real data from Firestore ──────────────────────────────────────
+    val profile by viewModel.profile.collectAsState()
+
+    val displayName   = profile.name.ifBlank { "Student" }
+    val avatarLetter  = displayName.firstOrNull()?.uppercaseChar()?.toString() ?: "S"
+    val department    = profile.department.ifBlank { "N/A" }
+    val enrollmentId  = profile.enrollmentId.ifBlank { "N/A" }
+    val email         = profile.email.ifBlank { "N/A" }
+    val phone         = profile.phone.ifBlank { "N/A" }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -34,7 +49,7 @@ fun StudentProfileScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF009688), // Student Teal
+                    containerColor = Color(0xFF009688),
                     titleContentColor = Color.White,
                     navigationIconContentColor = Color.White
                 )
@@ -48,7 +63,7 @@ fun StudentProfileScreen(
                 .background(Color(0xFFF0F4F4)),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 1. Header with Avatar
+            // ── Header with Avatar ────────────────────────────────────────────
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -65,45 +80,68 @@ fun StudentProfileScreen(
                             .background(Color.White),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("U", fontSize = 40.sp, fontWeight = FontWeight.Bold, color = Color(0xFF009688))
+                        // ← real initial from Firestore name
+                        Text(
+                            text       = avatarLetter,
+                            fontSize   = 40.sp,
+                            fontWeight = FontWeight.Bold,
+                            color      = Color(0xFF009688)
+                        )
                     }
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text("Ujjwal Yadav", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                    Text("B.Tech - Computer Science", color = Color.White.copy(alpha = 0.9f))
+                    // ← real name
+                    Text(
+                        displayName,
+                        color      = Color.White,
+                        fontSize   = 24.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    // ← real department
+                    Text(
+                        "B.Tech - $department",
+                        color = Color.White.copy(alpha = 0.9f)
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 2. Academic Details Card
+            // ── Academic Details Card ─────────────────────────────────────────
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors    = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(2.dp),
-                shape = RoundedCornerShape(16.dp)
+                shape     = RoundedCornerShape(16.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Academic Details", fontWeight = FontWeight.Bold, color = Color(0xFF009688))
+                    Text(
+                        "Academic Details",
+                        fontWeight = FontWeight.Bold,
+                        color      = Color(0xFF009688)
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    ProfileRow(Icons.Default.Badge, "Roll Number", "CS-101")
+                    // ← real enrollmentId
+                    ProfileRow(Icons.Default.Badge, "Enrollment ID", enrollmentId)
                     Divider(Modifier.padding(vertical = 8.dp), color = Color(0xFFF0F0F0))
-                    ProfileRow(Icons.Default.Class, "Current Batch", "CS-A (Semester 5)")
+                    // ← real department
+                    ProfileRow(Icons.Default.Class, "Department", department)
                     Divider(Modifier.padding(vertical = 8.dp), color = Color(0xFFF0F0F0))
-                    ProfileRow(Icons.Default.Email, "Email", "student@test.com")
+                    // ← real email
+                    ProfileRow(Icons.Default.Email, "Email", email)
                     Divider(Modifier.padding(vertical = 8.dp), color = Color(0xFFF0F0F0))
-                    ProfileRow(Icons.Default.Phone, "Guardian Phone", "+91 98765 00000")
+                    // ← real phone
+                    ProfileRow(Icons.Default.Phone, "Guardian Phone", phone)
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 3. Logout Button
+            // ── Logout Button ─────────────────────────────────────────────────
             Button(
                 onClick = {
-                    // LOGOUT: Clear stack and go to Login
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
@@ -113,7 +151,7 @@ fun StudentProfileScreen(
                     .padding(horizontal = 16.dp)
                     .height(50.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
-                shape = RoundedCornerShape(12.dp)
+                shape  = RoundedCornerShape(12.dp)
             ) {
                 Icon(Icons.Default.ExitToApp, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))

@@ -8,11 +8,7 @@ data class NoticeEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val title: String,
     val description: String,
-    val createdAt: Long,
-    val teacherId: Int,
-    val targetYear:Int,
-    val targetBranch:String,
-    val targetSection: String,
-    val attachmentUrl: String?,
-    val isActive: Boolean = true
+    val date: String,      // e.g. "12 Dec 2025"
+    val postedBy: String,  // e.g. "Prof. Salman"
+    val targetBatch: String // "ALL" or "CS-A"
 )

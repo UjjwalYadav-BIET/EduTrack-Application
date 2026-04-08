@@ -13,14 +13,17 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.FaceRetouchingNatural
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -33,73 +36,94 @@ import androidx.navigation.NavController
 import com.example.edutrackapp.cms.core.util.FaceAnalyzer
 import java.util.concurrent.Executors
 
+// ─── Design tokens (matches Teacher Dashboard) ────────────────────────────────
+private val DarkNavy     = Color(0xFF1B2438)
+private val AccentYellow = Color(0xFFFFB800)
+private val GreenPresent = Color(0xFF2ECC71)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FaceScanScreen(
-    navController: NavController
-) {
-    val context = LocalContext.current
+fun FaceScanScreen(navController: NavController) {
+
+    val context        = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // State to hold the count of faces
-    var faceCount by remember { mutableIntStateOf(0) }
+    var faceCount     by remember { mutableIntStateOf(0) }
     var hasPermission by remember { mutableStateOf(false) }
 
-    // Permission Launcher
+    // ── Camera permission ─────────────────────────────────────────────────
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { granted -> hasPermission = granted }
     )
 
     LaunchedEffect(Unit) {
-        val permissionCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
-        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
-            hasPermission = true
-        } else {
-            launcher.launch(Manifest.permission.CAMERA)
-        }
+        val check = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+        if (check == PackageManager.PERMISSION_GRANTED) hasPermission = true
+        else launcher.launch(Manifest.permission.CAMERA)
     }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Smart Attendance") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Black,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(DarkNavy)
+                    .statusBarsPadding()
+            ) {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(
+                                "Smart Attendance",
+                                fontWeight = FontWeight.Bold,
+                                fontSize   = 18.sp,
+                                color      = Color.White
+                            )
+                            Text(
+                                "Point camera at the class",
+                                fontSize = 11.sp,
+                                color    = Color.White.copy(alpha = 0.55f)
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
-            )
+            }
         }
     ) { paddingValues ->
+
         if (hasPermission) {
-            Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                // 1. CAMERA PREVIEW
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+            ) {
+                // ── Camera preview ────────────────────────────────────────
                 AndroidView(
                     factory = { ctx ->
-                        val previewView = PreviewView(ctx)
+                        val previewView        = PreviewView(ctx)
                         val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
 
                         cameraProviderFuture.addListener({
                             val cameraProvider = cameraProviderFuture.get()
 
-                            // Preview
                             val preview = Preview.Builder().build()
                             preview.setSurfaceProvider(previewView.surfaceProvider)
 
-                            // Analyzer
                             val imageAnalysis = ImageAnalysis.Builder()
                                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                                 .build()
 
-                            imageAnalysis.setAnalyzer(Executors.newSingleThreadExecutor(), FaceAnalyzer { count ->
-                                faceCount = count
-                            })
+                            imageAnalysis.setAnalyzer(
+                                Executors.newSingleThreadExecutor(),
+                                FaceAnalyzer { count -> faceCount = count }
+                            )
 
                             try {
                                 cameraProvider.unbindAll()
@@ -119,54 +143,141 @@ fun FaceScanScreen(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                // 2. OVERLAY (Face Count)
-                Column(
+                // ── Gradient scrim at bottom ──────────────────────────────
+                Box(
                     modifier = Modifier
+                        .fillMaxWidth()
+                        .height(260.dp)
                         .align(Alignment.BottomCenter)
-                        .padding(32.dp),
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color.Transparent, DarkNavy.copy(alpha = 0.92f))
+                            )
+                        )
+                )
+
+                // ── Overlay card ──────────────────────────────────────────
+                Column(
+                    modifier            = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(horizontal = 24.dp, vertical = 32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
-                            .padding(24.dp)
+                    // Face count badge
+                    Row(
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier              = Modifier
+                            .background(
+                                Color.White.copy(alpha = 0.10f),
+                                RoundedCornerShape(20.dp)
+                            )
+                            .padding(horizontal = 20.dp, vertical = 10.dp)
                     ) {
+                        Box(
+                            modifier         = Modifier
+                                .size(36.dp)
+                                .background(AccentYellow.copy(0.18f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.FaceRetouchingNatural,
+                                contentDescription = null,
+                                tint     = AccentYellow,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "Students Detected: $faceCount",
-                            color = Color.White,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
+                            text       = "Detected: $faceCount  ${if (faceCount == 1) "student" else "students"}",
+                            color      = Color.White,
+                            fontSize   = 17.sp,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-                    // ... inside the Column ...
+                    Spacer(modifier = Modifier.height(20.dp))
 
+                    // Confirm button
                     Button(
                         onClick = {
-                            // 1. Pass the count back to the previous screen
                             navController.previousBackStackEntry
                                 ?.savedStateHandle
                                 ?.set("face_count", faceCount)
-
-                            // 2. Show confirmation
-                            Toast.makeText(context, "Marking $faceCount students...", Toast.LENGTH_SHORT).show()
-
-                            // 3. Close Camera
+                            Toast.makeText(
+                                context,
+                                "Marking $faceCount students present…",
+                                Toast.LENGTH_SHORT
+                            ).show()
                             navController.popBackStack()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6200EE)),
-                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                        enabled  = faceCount > 0,
+                        colors   = ButtonDefaults.buttonColors(
+                            containerColor = AccentYellow,
+                            contentColor   = DarkNavy,
+                            disabledContainerColor = Color.White.copy(0.15f),
+                            disabledContentColor   = Color.White.copy(0.4f)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp),
+                        shape    = RoundedCornerShape(14.dp),
+                        elevation = ButtonDefaults.buttonElevation(0.dp)
                     ) {
-                        Icon(Icons.Default.CameraAlt, null)
+                        Icon(
+                            Icons.Default.CameraAlt,
+                            null,
+                            modifier = Modifier.size(18.dp)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("CONFIRM ATTENDANCE")
+                        Text(
+                            "CONFIRM ATTENDANCE",
+                            fontWeight    = FontWeight.Bold,
+                            fontSize      = 14.sp,
+                            letterSpacing = 0.5.sp
+                        )
                     }
                 }
             }
+
         } else {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Camera Permission Required")
+            // ── No permission state ───────────────────────────────────────
+            Box(
+                modifier         = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .background(Color(0xFFF5F6FA)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        modifier         = Modifier
+                            .size(80.dp)
+                            .background(DarkNavy.copy(0.08f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.CameraAlt,
+                            null,
+                            modifier = Modifier.size(36.dp),
+                            tint     = DarkNavy.copy(0.4f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        "Camera Permission Required",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize   = 16.sp,
+                        color      = Color(0xFF1A1A2E)
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        "Please allow camera access to use\nSmart Attendance",
+                        fontSize  = 13.sp,
+                        color     = Color(0xFF8A8A9A),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
             }
         }
     }

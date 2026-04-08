@@ -1,41 +1,44 @@
 package com.example.edutrackapp.cms.ui.navigation
 
 sealed class Screen(val route: String) {
-    object Login : Screen("login_screen")
-    object TeacherDashboard : Screen("teacher_dashboard")
-    object StudentDashboard : Screen("student_dashboard")
-    object Attendance : Screen("attendance_screen")
-    object Timetable : Screen("timetable_screen")
-    object CreateAssignment : Screen("create_assignment_screen")
-    object Notices : Screen("notice_screen")
-    object Results : Screen("results_screen")
-    object Profile : Screen("profile_screen")
-    object StudentAttendance : Screen("student_attendance_screen")
-    object StudentNotices : Screen("student_view_notices")
-    object StudentResults : Screen("student_results_screen")
-    object StudentAssignments : Screen("student_assignments_screen")
-    object StudentProfile : Screen("student_profile_screen")
-    object StudentTimetable : Screen("student_timetable_screen")
-    // Admin Routes
-    object AdminDashboard : Screen("admin_dashboard")
-    object AddTeacher : Screen("add_teacher_screen") // <--- ADD THIS LINE
-    object AddStudent : Screen("add_student_screen")
-    object FaceScan : Screen("face_scan_screen")
-    object Splash : Screen("splash_screen")
 
-    object TeacherAssignmentList : Screen("teacher_assignment_list")
-    object ViewSubmissions : Screen("view_submissions/{assignmentId}") {
-        fun createRoute(id: Int) = "view_submissions/$id"
-    }
-    object EvaluateSubmission : Screen("evaluate_submission/{submissionId}") {
-        fun createRoute(id: Int) = "evaluate_submission/$id"
+    // ── Auth ──────────────────────────────────────────────────────────────────
+    object Splash : Screen("splash")
+    object Login  : Screen("login")
+    object Otp    : Screen("otp/{phoneNumber}") {
+        fun createRoute(phoneNumber: String) = "otp/$phoneNumber"
     }
 
-    object TeacherNoticeList : Screen("teacher_notice_list")
-
-    object TestList : Screen("test_list_screen")
-    object CreateTest : Screen("create_test_screen")
-    object EnterMarks : Screen("enter_marks/{testId}") {
-        fun createRoute(testId: Int) = "enter_marks/$testId"
+    // ── Teacher ───────────────────────────────────────────────────────────────
+    object TeacherDashboard     : Screen("teacher_dashboard")
+    object Attendance           : Screen("attendance")
+    object AttendanceHistory    : Screen("attendance_history")
+    object FaceScan             : Screen("face_scan")
+    object Timetable            : Screen("timetable")
+    object CreateAssignment     : Screen("create_assignment")
+    object TeacherAssignmentList: Screen("teacher_assignment_list")
+    object ViewSubmissions      : Screen("view_submissions/{assignmentId}") {
+        fun createRoute(assignmentId: Int) = "view_submissions/$assignmentId"
     }
+    object Notices              : Screen("teacher_notices")       // ← list screen (was "create_notice")
+    object CreateNotice         : Screen("create_notice")         // ← post screen (new)
+    object Results              : Screen("enter_marks")
+    object Profile              : Screen("teacher_profile")
+    object TeacherProfile       : Screen("teacher_profile_detail")
+    object LeaveRequest         : Screen("leave_request")
+
+    // ── Student ───────────────────────────────────────────────────────────────
+    object StudentDashboard     : Screen("student_dashboard")
+    object StudentAttendance    : Screen("student_attendance")
+    object StudentNotices       : Screen("student_notices")
+    object StudentResults       : Screen("student_results")
+    object StudentAssignments   : Screen("student_assignments")
+    object StudentProfile       : Screen("student_profile")
+    object StudentTimetable     : Screen("student_timetable")
+
+    // ── Admin ─────────────────────────────────────────────────────────────────
+    object AdminDashboard       : Screen("admin_dashboard")
+    object AddTeacher           : Screen("add_teacher")
+    object AddStudent           : Screen("add_student")
+    object PostNotice           : Screen("post_notice")
 }

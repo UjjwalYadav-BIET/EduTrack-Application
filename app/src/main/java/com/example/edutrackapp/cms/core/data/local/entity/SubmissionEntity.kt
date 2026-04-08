@@ -6,8 +6,13 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "submissions")
 data class SubmissionEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val assignmentId: Int,
-    val studentRollNo: String, // e.g. "CS-101"
-    val submissionDate: String,
-    val fileUri: String
+    val firestoreId: String = "",
+    val assignmentId: String = "",   // Firestore doc ID (String now)
+    val studentRollNo: String = "",
+    val studentName: String = "",
+    val studentUid: String = "",
+    val fileUri: String = "",
+    val submissionDate: String = "",
+    val marks: String = "",
+    val status: String = "submitted"
 )

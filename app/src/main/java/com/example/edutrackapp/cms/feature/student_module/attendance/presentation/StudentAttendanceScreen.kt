@@ -4,12 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,8 +27,8 @@ fun StudentAttendanceScreen(
     navController: NavController,
     viewModel: StudentAttendanceViewModel = hiltViewModel()
 ) {
-    val attendanceList = viewModel.attendanceList
-    val overall = viewModel.getOverallPercentage()
+    val sessions by viewModel.sessions.collectAsState()
+    val overall  by viewModel.overallPercentage.collectAsState()
 
     Scaffold(
         topBar = {
@@ -39,7 +40,7 @@ fun StudentAttendanceScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF009688), // Student Teal
+                    containerColor = Color(0xFF009688),
                     titleContentColor = Color.White,
                     navigationIconContentColor = Color.White
                 )
@@ -52,7 +53,7 @@ fun StudentAttendanceScreen(
                 .padding(paddingValues)
                 .background(Color(0xFFF0F4F4))
         ) {
-            // 1. Overall Score Card
+            // Overall Score Card
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -71,37 +72,48 @@ fun StudentAttendanceScreen(
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "${sessions.count { it.status == "present" }} / ${sessions.size} sessions",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 13.sp
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
-
-                    if (overall < 75) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Color.Red)
-                                .padding(horizontal = 12.dp, vertical = 4.dp)
-                        ) {
-                            Text("Shortage Alert!", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    if (sessions.isNotEmpty()) {
+                        if (overall < 75) {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Color.Red)
+                                    .padding(horizontal = 12.dp, vertical = 4.dp)
+                            ) {
+                                Text("Shortage Alert!", color = Color.White,
+                                    fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            }
+                        } else {
+                            Text("You are safe!", color = Color.White.copy(alpha = 0.9f), fontSize = 12.sp)
                         }
-                    } else {
-                        Text("You are safe!", color = Color.White.copy(alpha=0.9f), fontSize = 12.sp)
                     }
                 }
             }
 
-            // 2. Subject List
             Text(
-                text = "Subject Breakdown",
+                text = "Attendance History",
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 fontWeight = FontWeight.Bold,
                 color = Color.Gray
             )
 
-            LazyColumn(
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(attendanceList) { subject ->
-                    AttendanceCard(subject)
+            if (sessions.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No attendance records yet.", color = Color.Gray)
+                }
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    items(sessions) { session -> SessionCard(session) }
                 }
             }
         }
@@ -109,46 +121,38 @@ fun StudentAttendanceScreen(
 }
 
 @Composable
-fun AttendanceCard(subject: SubjectAttendance) {
+fun SessionCard(session: AttendanceSession) {
+    val isPresent = session.status == "present"
+    val color     = if (isPresent) Color(0xFF4CAF50) else Color(0xFFF44336)
+
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors    = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(2.dp),
-        shape = RoundedCornerShape(12.dp)
+        shape     = RoundedCornerShape(12.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = subject.subjectName, fontWeight = FontWeight.Bold)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text(session.date, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text(session.time, fontSize = 12.sp, color = Color.Gray)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = if (isPresent) Icons.Default.CheckCircle else Icons.Default.Cancel,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "${subject.percentage}%",
+                    text = if (isPresent) "Present" else "Absent",
                     fontWeight = FontWeight.Bold,
-                    color = subject.color
+                    color = color
                 )
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Progress Bar
-            LinearProgressIndicator(
-                progress = { subject.percentage / 100f },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(CircleShape),
-                color = subject.color,
-                trackColor = Color.LightGray.copy(alpha = 0.3f),
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Attended: ${subject.attended} / ${subject.total} lectures",
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
         }
     }
 }

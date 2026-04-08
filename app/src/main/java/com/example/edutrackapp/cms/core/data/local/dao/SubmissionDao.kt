@@ -12,10 +12,12 @@ interface SubmissionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSubmission(submission: SubmissionEntity)
 
-    // Get all submissions for this student to check what is "Done"
     @Query("SELECT * FROM submissions WHERE studentRollNo = :rollNo")
     fun getStudentSubmissions(rollNo: String): Flow<List<SubmissionEntity>>
 
+    @Query("SELECT * FROM submissions WHERE studentRollNo = :rollNo")
+    suspend fun getStudentSubmissionsOnce(rollNo: String): List<SubmissionEntity>
+
     @Query("SELECT * FROM submissions WHERE assignmentId = :assignmentId")
-    fun getSubmissionsForAssignment(assignmentId: Int): Flow<List<SubmissionEntity>>
+    fun getSubmissionsForAssignment(assignmentId: String): Flow<List<SubmissionEntity>>
 }
