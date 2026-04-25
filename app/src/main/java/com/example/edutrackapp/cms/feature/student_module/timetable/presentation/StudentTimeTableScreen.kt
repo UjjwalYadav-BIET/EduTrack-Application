@@ -35,7 +35,7 @@ fun StudentTimeTableScreen(
     navController: NavController,
     viewModel: StudentTimeTableViewModel = hiltViewModel()
 ) {
-    val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri")
+    val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri","Sat")
     val selectedDay = viewModel.selectedDay.value
     val classes = viewModel.currentClasses.value
     val studentColor = Color(0xFF009688) // Teal
@@ -99,7 +99,7 @@ fun StudentTimeTableScreen(
 fun DayPill(day: String, isSelected: Boolean, color: Color, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(50))
+            .clip(RoundedCornerShape(100))
             .background(if (isSelected) color else Color.White)
             .clickable { onClick() }
             .padding(horizontal = 24.dp, vertical = 10.dp)
