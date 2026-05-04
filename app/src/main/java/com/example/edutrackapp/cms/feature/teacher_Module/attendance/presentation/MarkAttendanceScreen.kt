@@ -46,6 +46,7 @@ private val DividerColor = Color(0xFFEEEEEE)
 @Composable
 fun MarkAttendanceScreen(
     navController: NavController,
+    classId: String,
     viewModel: AttendanceViewModel = hiltViewModel()
 ) {
     val context   = LocalContext.current
@@ -54,7 +55,16 @@ fun MarkAttendanceScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
 
-    // ── Face-scan result ──────────────────────────────────────────────────
+    // Collect students as Compose state so every toggle triggers recompose
+    val allStudents     by viewModel.students.collectAsState()
+    val displayStudents  = viewModel.filteredStudents(allStudents)
+
+    // Load students when screen opens
+    LaunchedEffect(classId) {
+        viewModel.loadStudents(classId)
+    }
+
+    // Receive face-scan result from FaceScanScreen
     val faceCount by backStack?.savedStateHandle
         ?.getStateFlow<Int?>("face_count", null)
         ?.collectAsState()
@@ -80,8 +90,9 @@ fun MarkAttendanceScreen(
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
-                        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                        viewModel.onDateChange(sdf.format(Date(millis)))
+                        viewModel.onDateChange(
+                            SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(millis))
+                        )
                     }
                     showDatePicker = false
                 }) { Text("OK", color = DarkNavy, fontWeight = FontWeight.Bold) }
@@ -117,16 +128,13 @@ fun MarkAttendanceScreen(
                 }) { Text("OK", color = DarkNavy, fontWeight = FontWeight.Bold) }
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
-                    Text("Cancel", color = TextGray)
-                }
+                TextButton(onClick = { showTimePicker = false }) { Text("Cancel", color = TextGray) }
             },
             title = { Text("Select Session Time", fontWeight = FontWeight.Bold, color = TextDark) },
             text  = { TimePicker(state = timePickerState) }
         )
     }
 
-    // ─────────────────────────────────────────────────────────────────────
     Scaffold(
         containerColor = BgLight,
         topBar = {
@@ -140,10 +148,7 @@ fun MarkAttendanceScreen(
                 ) {
                     Column(
                         modifier = Modifier.padding(
-                            start  = 4.dp,
-                            end    = 8.dp,
-                            top    = 8.dp,
-                            bottom = 16.dp
+                            start = 4.dp, end = 8.dp, top = 8.dp, bottom = 16.dp
                         )
                     ) {
                         Row(
@@ -151,11 +156,7 @@ fun MarkAttendanceScreen(
                             modifier          = Modifier.fillMaxWidth()
                         ) {
                             IconButton(onClick = { navController.popBackStack() }) {
-                                Icon(
-                                    Icons.Default.ArrowBack,
-                                    contentDescription = "Back",
-                                    tint = Color.White
-                                )
+                                Icon(Icons.Default.ArrowBack, null, tint = Color.White)
                             }
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
@@ -164,29 +165,36 @@ fun MarkAttendanceScreen(
                                     fontSize   = 18.sp,
                                     color      = Color.White
                                 )
-                                // ── Shows real count from Firestore ───────
                                 Text(
                                     if (viewModel.isLoadingStudents)
-                                        "Computer Science  •  CS-A  •  Loading…"
+                                        "Computer Science  •  $classId  •  Loading…"
                                     else
-                                        "Computer Science  •  CS-A  •  ${viewModel.getTotalCount()} Students",
+                                        "Computer Science  •  $classId  •  ${allStudents.size} Students",
                                     fontSize = 11.sp,
                                     color    = Color.White.copy(alpha = 0.55f)
                                 )
                             }
-                            IconButton(onClick = { navController.navigate(Screen.AttendanceHistory.route) }) {
+                            // ✅ Enroll faces button
+                            IconButton(
+                                onClick = {
+                                    navController.navigate(Screen.EnrollFace.createRoute(classId))
+                                }
+                            ) {
                                 Icon(
-                                    Icons.Default.History,
-                                    contentDescription = "History",
-                                    tint = Color.White.copy(0.85f)
-                                )
-                            }
-                            IconButton(onClick = { viewModel.exportToCSV(context) }) {
-                                Icon(
-                                    Icons.Default.FileDownload,
-                                    contentDescription = "Export CSV",
+                                    Icons.Default.PersonAdd,
+                                    contentDescription = "Enroll Faces",
                                     tint = AccentYellow
                                 )
+                            }
+                            IconButton(
+                                onClick = {
+                                    navController.navigate(Screen.AttendanceHistory.route)
+                                }
+                            ) {
+                                Icon(Icons.Default.History, null, tint = Color.White.copy(0.85f))
+                            }
+                            IconButton(onClick = { viewModel.exportToCSV(context) }) {
+                                Icon(Icons.Default.FileDownload, null, tint = AccentYellow)
                             }
                         }
 
@@ -219,21 +227,14 @@ fun MarkAttendanceScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(DarkNavy)
-                        .background(
-                            BgLight,
-                            RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-                        )
+                        .background(BgLight, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                         .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
                     OutlinedTextField(
                         value         = viewModel.searchQuery,
                         onValueChange = { viewModel.onSearchQueryChange(it) },
                         placeholder   = {
-                            Text(
-                                "Search name or roll number…",
-                                fontSize = 14.sp,
-                                color    = TextGray
-                            )
+                            Text("Search name or roll number…", fontSize = 14.sp, color = TextGray)
                         },
                         leadingIcon  = {
                             Icon(Icons.Default.Search, null, tint = TextGray, modifier = Modifier.size(20.dp))
@@ -259,20 +260,17 @@ fun MarkAttendanceScreen(
             }
         },
 
-        // ── FAB ───────────────────────────────────────────────────────────
+        // ── FAB — Smart Attendance via Face Scan ──────────────────────────
         floatingActionButton = {
             FloatingActionButton(
-                onClick        = { navController.navigate(Screen.FaceScan.route) },
+                // ✅ Pass classId so FaceScanScreen loads the right enrolled faces
+                onClick        = { navController.navigate(Screen.FaceScan.createRoute(classId)) },
                 containerColor = DarkNavy,
                 contentColor   = AccentYellow,
                 shape          = RoundedCornerShape(16.dp),
                 modifier       = Modifier.size(60.dp)
             ) {
-                Icon(
-                    Icons.Default.CameraAlt,
-                    contentDescription = "Smart Attendance",
-                    modifier           = Modifier.size(26.dp)
-                )
+                Icon(Icons.Default.CameraAlt, "Smart Attendance", modifier = Modifier.size(26.dp))
             }
         },
 
@@ -293,11 +291,11 @@ fun MarkAttendanceScreen(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment     = Alignment.CenterVertically
                     ) {
-                        StatItem(label = "Present", count = viewModel.getPresentCount(), color = GreenPresent)
+                        StatItem(label = "Present", count = allStudents.count { it.isPresent },  color = GreenPresent)
                         VerticalDivider()
-                        StatItem(label = "Absent",  count = viewModel.getAbsentCount(),  color = RedAbsent)
+                        StatItem(label = "Absent",  count = allStudents.count { !it.isPresent }, color = RedAbsent)
                         VerticalDivider()
-                        StatItem(label = "Total",   count = viewModel.getTotalCount(),   color = DarkNavy)
+                        StatItem(label = "Total",   count = allStudents.size,                    color = DarkNavy)
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -312,7 +310,6 @@ fun MarkAttendanceScreen(
                             ).show()
                             navController.popBackStack()
                         },
-                        // Disable submit while students are still loading
                         enabled  = !viewModel.isLoadingStudents,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -332,13 +329,9 @@ fun MarkAttendanceScreen(
                 }
             }
         }
-
     ) { paddingValues ->
 
-        val displayStudents = viewModel.filteredStudents
-
         when {
-            // ── Loading state — Firestore fetching students ───────────────
             viewModel.isLoadingStudents -> {
                 Box(
                     modifier         = Modifier
@@ -347,22 +340,13 @@ fun MarkAttendanceScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(
-                            color        = AccentYellow,
-                            strokeWidth  = 3.dp,
-                            modifier     = Modifier.size(48.dp)
-                        )
+                        CircularProgressIndicator(color = AccentYellow, strokeWidth = 3.dp, modifier = Modifier.size(48.dp))
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            "Loading students…",
-                            color    = TextGray,
-                            fontSize = 14.sp
-                        )
+                        Text("Loading students…", color = TextGray, fontSize = 14.sp)
                     }
                 }
             }
 
-            // ── Empty state — loaded but no results / no search match ─────
             displayStudents.isEmpty() -> {
                 Box(
                     modifier         = Modifier
@@ -371,41 +355,28 @@ fun MarkAttendanceScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.Default.SearchOff,
-                            null,
-                            modifier = Modifier.size(64.dp),
-                            tint     = TextGray.copy(alpha = 0.35f)
-                        )
+                        Icon(Icons.Default.SearchOff, null, modifier = Modifier.size(64.dp), tint = TextGray.copy(alpha = 0.35f))
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            if (viewModel.searchQuery.isBlank())
-                                "No students enrolled yet"
-                            else
-                                "No students found",
-                            color    = TextGray,
-                            fontSize = 15.sp
+                            if (viewModel.searchQuery.isBlank()) "No students enrolled yet" else "No students found",
+                            color = TextGray, fontSize = 15.sp
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            if (viewModel.searchQuery.isBlank())
-                                "Ask the admin to enroll students first"
-                            else
-                                "Try a different name or roll number",
-                            color    = TextGray.copy(0.6f),
-                            fontSize = 13.sp
+                            if (viewModel.searchQuery.isBlank()) "Ask the admin to enroll students first"
+                            else "Try a different name or roll number",
+                            color = TextGray.copy(0.6f), fontSize = 13.sp
                         )
                     }
                 }
             }
 
-            // ── Loaded — show student list ────────────────────────────────
             else -> {
                 LazyColumn(
-                    modifier        = Modifier
+                    modifier            = Modifier
                         .fillMaxSize()
                         .padding(paddingValues),
-                    contentPadding  = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    contentPadding      = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     item {
@@ -445,19 +416,16 @@ fun MarkAttendanceScreen(
     }
 }
 
-// ─── Student Row Card ──────────────────────────────────────────────────────────
+// ─── Student Row Card ─────────────────────────────────────────────────────────
 @Composable
 fun StudentRow(student: StudentUiModel, onToggle: () -> Unit) {
-
     val bgColor by animateColorAsState(
         targetValue   = if (student.isPresent) GreenPresent.copy(alpha = 0.06f) else CardWhite,
-        animationSpec = tween(300),
-        label         = "cardBg"
+        animationSpec = tween(300), label = "cardBg"
     )
     val iconScale by animateFloatAsState(
         targetValue   = if (student.isPresent) 1.15f else 1f,
-        animationSpec = tween(200),
-        label         = "iconScale"
+        animationSpec = tween(200), label = "iconScale"
     )
 
     Card(
@@ -481,9 +449,7 @@ fun StudentRow(student: StudentUiModel, onToggle: () -> Unit) {
                         RoundedCornerShape(topStart = 14.dp, bottomStart = 14.dp)
                     )
             )
-
             Spacer(modifier = Modifier.width(14.dp))
-
             Box(
                 modifier         = Modifier
                     .size(44.dp)
@@ -501,37 +467,21 @@ fun StudentRow(student: StudentUiModel, onToggle: () -> Unit) {
                     color      = if (student.isPresent) GreenPresent else DarkNavy
                 )
             }
-
             Spacer(modifier = Modifier.width(12.dp))
-
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text       = student.name,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize   = 14.sp,
-                    color      = TextDark
-                )
+                Text(student.name, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = TextDark)
                 Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text     = student.rollNo,
-                    fontSize = 12.sp,
-                    color    = TextGray
-                )
+                Text(student.rollNo, fontSize = 12.sp, color = TextGray)
             }
-
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier            = Modifier.padding(end = 16.dp)
             ) {
                 Icon(
-                    imageVector        = if (student.isPresent) Icons.Default.CheckCircle
-                    else Icons.Default.RadioButtonUnchecked,
+                    imageVector        = if (student.isPresent) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
                     contentDescription = null,
-                    tint               = if (student.isPresent) GreenPresent
-                    else TextGray.copy(alpha = 0.4f),
-                    modifier           = Modifier
-                        .size(28.dp)
-                        .scale(iconScale)
+                    tint               = if (student.isPresent) GreenPresent else TextGray.copy(alpha = 0.4f),
+                    modifier           = Modifier.size(28.dp).scale(iconScale)
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
@@ -546,7 +496,7 @@ fun StudentRow(student: StudentUiModel, onToggle: () -> Unit) {
     }
 }
 
-// ─── Date/Time Chip ───────────────────────────────────────────────────────────
+// ─── Shared Composables ───────────────────────────────────────────────────────
 @Composable
 fun DateTimeChip(
     modifier: Modifier = Modifier,
@@ -554,16 +504,8 @@ fun DateTimeChip(
     label: String,
     onClick: () -> Unit
 ) {
-    Surface(
-        onClick  = onClick,
-        shape    = RoundedCornerShape(20.dp),
-        color    = Color.White.copy(alpha = 0.12f),
-        modifier = modifier
-    ) {
-        Row(
-            modifier          = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    Surface(onClick = onClick, shape = RoundedCornerShape(20.dp), color = Color.White.copy(alpha = 0.12f), modifier = modifier) {
+        Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, tint = AccentYellow, modifier = Modifier.size(14.dp))
             Spacer(modifier = Modifier.width(6.dp))
             Text(label, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
@@ -571,31 +513,15 @@ fun DateTimeChip(
     }
 }
 
-// ─── Stat Item ────────────────────────────────────────────────────────────────
 @Composable
 fun StatItem(label: String, count: Int, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text       = count.toString(),
-            fontWeight = FontWeight.Bold,
-            fontSize   = 22.sp,
-            color      = color
-        )
-        Text(
-            text     = label,
-            fontSize = 12.sp,
-            color    = TextGray
-        )
+        Text(count.toString(), fontWeight = FontWeight.Bold, fontSize = 22.sp, color = color)
+        Text(label, fontSize = 12.sp, color = TextGray)
     }
 }
 
-// ─── Vertical Divider ─────────────────────────────────────────────────────────
 @Composable
 fun VerticalDivider() {
-    Box(
-        modifier = Modifier
-            .width(1.dp)
-            .height(36.dp)
-            .background(DividerColor)
-    )
+    Box(modifier = Modifier.width(1.dp).height(36.dp).background(DividerColor))
 }

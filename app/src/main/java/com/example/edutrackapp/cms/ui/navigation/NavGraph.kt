@@ -24,6 +24,7 @@ import com.example.edutrackapp.cms.feature.teacher_Module.assignments.presentati
 import com.example.edutrackapp.cms.feature.teacher_Module.assignments.presentation.TeacherAssignmentListScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.assignments.presentation.TeacherSubmissionScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.attendance.presentation.AttendanceHistoryScreen
+import com.example.edutrackapp.cms.feature.teacher_Module.attendance.presentation.EnrollFaceScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.attendance.presentation.FaceScanScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.attendance.presentation.MarkAttendanceScreen
 import com.example.edutrackapp.cms.feature.teacher_Module.dashboard.TeacherDashboardScreen
@@ -37,17 +38,17 @@ import com.example.edutrackapp.cms.feature.teacher_Module.timetable.presentation
 @Composable
 fun EduTrackNavGraph(navController: NavHostController) {
     NavHost(
-        navController = navController,
+        navController    = navController,
         startDestination = Screen.Splash.route
     ) {
 
         // ── Splash ────────────────────────────────────────────────────────────
-        composable(route = Screen.Splash.route) {
+        composable(Screen.Splash.route) {
             SplashScreen(navController = navController)
         }
 
         // ── Login ─────────────────────────────────────────────────────────────
-        composable(route = Screen.Login.route) {
+        composable(Screen.Login.route) {
             LoginScreen(
                 onLoginSuccess = { result ->
                     when {
@@ -55,26 +56,22 @@ fun EduTrackNavGraph(navController: NavHostController) {
                             val phone = result.removePrefix("otp:")
                             navController.navigate(Screen.Otp.createRoute(phone))
                         }
-                        result.equals("teacher", ignoreCase = true) -> {
+                        result.equals("teacher", ignoreCase = true) ->
                             navController.navigate(Screen.TeacherDashboard.route) {
                                 popUpTo(Screen.Login.route) { inclusive = true }
                             }
-                        }
-                        result.equals("admin", ignoreCase = true) -> {
+                        result.equals("admin", ignoreCase = true) ->
                             navController.navigate(Screen.AdminDashboard.route) {
                                 popUpTo(Screen.Login.route) { inclusive = true }
                             }
-                        }
-                        result.equals("student", ignoreCase = true) -> {
+                        result.equals("student", ignoreCase = true) ->
                             navController.navigate(Screen.StudentDashboard.route) {
                                 popUpTo(Screen.Login.route) { inclusive = true }
                             }
-                        }
-                        else -> {
+                        else ->
                             navController.navigate(Screen.Login.route) {
                                 popUpTo(Screen.Login.route) { inclusive = true }
                             }
-                        }
                     }
                 }
             )
@@ -82,69 +79,86 @@ fun EduTrackNavGraph(navController: NavHostController) {
 
         // ── OTP ───────────────────────────────────────────────────────────────
         composable(
-            route = Screen.Otp.route,
+            route     = Screen.Otp.route,
             arguments = listOf(navArgument("phoneNumber") { type = NavType.StringType })
         ) { backStackEntry ->
             val phoneNumber = backStackEntry.arguments?.getString("phoneNumber") ?: ""
             OtpScreen(
                 phoneNumber = phoneNumber,
-                onVerified = { role ->
+                onVerified  = { role ->
                     when {
-                        role.equals("teacher", ignoreCase = true) -> {
+                        role.equals("teacher", ignoreCase = true) ->
                             navController.navigate(Screen.TeacherDashboard.route) {
                                 popUpTo(Screen.Login.route) { inclusive = true }
                             }
-                        }
-                        role.equals("admin", ignoreCase = true) -> {
+                        role.equals("admin", ignoreCase = true) ->
                             navController.navigate(Screen.AdminDashboard.route) {
                                 popUpTo(Screen.Login.route) { inclusive = true }
                             }
-                        }
-                        else -> {
+                        else ->
                             navController.navigate(Screen.StudentDashboard.route) {
                                 popUpTo(Screen.Login.route) { inclusive = true }
                             }
-                        }
                     }
                 },
                 onBack = { navController.popBackStack() }
             )
         }
 
-        // ── Teacher Routes ────────────────────────────────────────────────────
-        composable(route = Screen.TeacherDashboard.route) {
+        // ── Teacher ───────────────────────────────────────────────────────────
+
+        composable(Screen.TeacherDashboard.route) {
             TeacherDashboardScreen(navController = navController)
         }
-        composable(route = Screen.Attendance.route) {
-            MarkAttendanceScreen(navController = navController)
-        }
-        composable(route = Screen.Timetable.route) {
-            TimeTableScreen(navController = navController)
-        }
-        composable(route = Screen.CreateAssignment.route) {
-            CreateAssignmentScreen(navController = navController)
+
+        // Mark Attendance — receives classId
+        composable(
+            route     = Screen.Attendance.route,
+            arguments = listOf(navArgument("classId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val classId = backStackEntry.arguments?.getString("classId") ?: "CS-A"
+            MarkAttendanceScreen(navController = navController, classId = classId)
         }
 
-        // Notices list — teacher sees all notices visible to them
-        composable(route = Screen.Notices.route) {
-            TeacherNoticesListScreen(navController = navController)
-        }
-        // Create notice — teacher posts a new notice
-        composable(route = Screen.CreateNotice.route) {
-            CreateNoticeScreen(navController = navController)
-        }
-
-        composable(route = Screen.Results.route) {
-            EnterMarksScreen(navController = navController)
-        }
-        composable(route = Screen.Profile.route) {
-            TeacherProfileScreen(navController = navController)
-        }
-        composable(route = Screen.AttendanceHistory.route) {
+        composable(Screen.AttendanceHistory.route) {
             AttendanceHistoryScreen(navController = navController)
         }
-        composable(route = Screen.TeacherAssignmentList.route) {
-            TeacherAssignmentListScreen(navController = navController)
+
+        // ✅ FaceScan — receives classId so it loads the right enrolled faces
+        composable(
+            route     = Screen.FaceScan.route,
+            arguments = listOf(navArgument("classId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val classId = backStackEntry.arguments?.getString("classId") ?: "CS-A"
+            FaceScanScreen(navController = navController, classId = classId)
+        }
+
+        // ✅ NEW — EnrollFace — receives classId
+        composable(
+            route     = Screen.EnrollFace.route,
+            arguments = listOf(navArgument("classId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val classId = backStackEntry.arguments?.getString("classId") ?: "CS-A"
+            EnrollFaceScreen(navController = navController, classId = classId)
+        }
+
+        composable(Screen.Timetable.route) {
+            TimeTableScreen(navController = navController)
+        }
+        composable(Screen.CreateAssignment.route) {
+            CreateAssignmentScreen(navController = navController)
+        }
+        composable(Screen.Notices.route) {
+            TeacherNoticesListScreen(navController = navController)
+        }
+        composable(Screen.CreateNotice.route) {
+            CreateNoticeScreen(navController = navController)
+        }
+        composable(Screen.Results.route) {
+            EnterMarksScreen(navController = navController)
+        }
+        composable(Screen.Profile.route) {
+            TeacherProfileScreen(navController = navController)
         }
         composable(Screen.TeacherProfile.route) {
             TeacherProfileScreen(navController = navController)
@@ -152,47 +166,49 @@ fun EduTrackNavGraph(navController: NavHostController) {
         composable(Screen.LeaveRequest.route) {
             TeacherLeaveRequestScreen(navController = navController)
         }
+        composable(Screen.TeacherAssignmentList.route) {
+            TeacherAssignmentListScreen(navController = navController)
+        }
         composable(
-            route = Screen.ViewSubmissions.route,
+            route     = Screen.ViewSubmissions.route,
             arguments = listOf(navArgument("assignmentId") { type = NavType.IntType })
         ) {
             TeacherSubmissionScreen(navController = navController)
         }
-        composable(route = Screen.FaceScan.route) {
-            FaceScanScreen(navController = navController)
-        }
 
-        // ── Student Routes ────────────────────────────────────────────────────
-        composable(route = Screen.StudentDashboard.route) {
+        // ── Student ───────────────────────────────────────────────────────────
+
+        composable(Screen.StudentDashboard.route) {
             StudentDashboardScreen(navController = navController)
         }
-        composable(route = Screen.StudentAttendance.route) {
+        composable(Screen.StudentAttendance.route) {
             StudentAttendanceScreen(navController = navController)
         }
-        composable(route = Screen.StudentNotices.route) {
+        composable(Screen.StudentNotices.route) {
             StudentNoticeScreen(navController = navController)
         }
-        composable(route = Screen.StudentResults.route) {
+        composable(Screen.StudentResults.route) {
             StudentResultScreen(navController = navController)
         }
-        composable(route = Screen.StudentAssignments.route) {
+        composable(Screen.StudentAssignments.route) {
             StudentAssignmentScreen(navController = navController)
         }
-        composable(route = Screen.StudentProfile.route) {
+        composable(Screen.StudentProfile.route) {
             StudentProfileScreen(navController = navController)
         }
-        composable(route = Screen.StudentTimetable.route) {
+        composable(Screen.StudentTimetable.route) {
             StudentTimeTableScreen(navController = navController)
         }
 
-        // ── Admin Routes ──────────────────────────────────────────────────────
-        composable(route = Screen.AdminDashboard.route) {
+        // ── Admin ─────────────────────────────────────────────────────────────
+
+        composable(Screen.AdminDashboard.route) {
             AdminDashboardScreen(navController = navController)
         }
-        composable(route = Screen.AddTeacher.route) {
+        composable(Screen.AddTeacher.route) {
             AddTeacherScreen(navController = navController)
         }
-        composable(route = Screen.AddStudent.route) {
+        composable(Screen.AddStudent.route) {
             AddStudentScreen(navController = navController)
         }
         composable(Screen.PostNotice.route) {

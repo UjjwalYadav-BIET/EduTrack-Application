@@ -27,6 +27,7 @@ data class UserModel(
     val department   : String    = "",
     val employeeId   : String    = "",       // teachers only
     val enrollmentId : String    = "",       // students only
+    val rollNo       : String    = "",
     val subject      : String    = "",       // teachers only
     val createdAt    : Timestamp? = null
 )

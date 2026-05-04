@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Query
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,33 +38,68 @@ class StudentAttendanceViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    init { loadRollNoThenListen() }
+    init { loadAttendance() }
 
-    private fun loadRollNoThenListen() {
+    /**
+     * Loads the student's attendance by:
+     * 1. Getting the student's enrollmentId from users/{uid}
+     * 2. Scanning all sessions under classes/CS-A/sessions
+     * 3. For each session, reading the attendance doc keyed by uid
+     *
+     * This matches exactly how AttendanceRepository.saveAttendance() writes data:
+     *   classes/{classId}/sessions/{sessionId}/attendance/{studentId}
+     */
+    private fun loadAttendance() {
         val uid = auth.currentUser?.uid ?: return
+
         viewModelScope.launch {
             try {
-                val doc    = db.collection("users").document(uid).get().await()
-                val rollNo = doc.getString("enrollmentId") ?: return@launch
-                listenToAttendance(rollNo)
-            } catch (e: Exception) { /* handle */ }
-        }
-    }
+                // Step 1: get the student's classId / department from their user doc
+                val userDoc = db.collection("users").document(uid).get().await()
+                // We use "CS-A" as the default classId — same default used in AttendanceRepository
+                val classId = "CS-A"
 
-    private fun listenToAttendance(rollNo: String) {
-        db.collection("attendance")
-            .whereEqualTo("rollNo", rollNo)
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null || snapshot == null) return@addSnapshotListener
-                // This fires instantly whenever the teacher submits attendance
-                _sessions.value = snapshot.documents.map { doc ->
-                    AttendanceSession(
-                        date   = doc.getString("date")   ?: "",
-                        time   = doc.getString("time")   ?: "",
-                        status = doc.getString("status") ?: "absent"
-                    )
+                // Step 2: fetch all session metadata docs (already contain date, time)
+                val sessionsSnapshot = db
+                    .collection("classes")
+                    .document(classId)
+                    .collection("sessions")
+                    .orderBy("savedAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                    .get()
+                    .await()
+
+                val result = mutableListOf<AttendanceSession>()
+
+                // Step 3: for each session, check this student's attendance doc
+                for (sessionDoc in sessionsSnapshot.documents) {
+                    val sessionId   = sessionDoc.id
+                    val date        = sessionDoc.getString("date") ?: continue
+                    val time        = sessionDoc.getString("time") ?: continue
+
+                    val attendanceDoc = db
+                        .collection("classes")
+                        .document(classId)
+                        .collection("sessions")
+                        .document(sessionId)
+                        .collection("attendance")
+                        .document(uid)          // keyed by studentId (uid) in saveAttendance()
+                        .get()
+                        .await()
+
+                    // If the doc exists, use its status; otherwise student was absent
+                    val status = if (attendanceDoc.exists())
+                        attendanceDoc.getString("status") ?: "absent"
+                    else
+                        "absent"
+
+                    result.add(AttendanceSession(date = date, time = time, status = status))
                 }
+
+                _sessions.value = result
+
+            } catch (e: Exception) {
+                android.util.Log.e("StudentAttendanceVM", "Error loading attendance: ${e.message}", e)
             }
+        }
     }
 }

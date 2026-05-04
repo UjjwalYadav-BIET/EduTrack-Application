@@ -11,6 +11,10 @@ android {
     namespace = "com.example.edutrackapp"
     compileSdk = 35
 
+    aaptOptions {
+        noCompress += "tflite"
+    }
+
     defaultConfig {
         applicationId = "com.example.edutrackapp"
         minSdk = 28
@@ -101,4 +105,11 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 
     implementation("com.google.firebase:firebase-storage-ktx")
+
+    // TFLite
+    implementation("org.tensorflow:tensorflow-lite:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+
+    // Coil for image loading in compose (for enrollment preview)
+    implementation("io.coil-kt:coil-compose:2.6.0")
 }
